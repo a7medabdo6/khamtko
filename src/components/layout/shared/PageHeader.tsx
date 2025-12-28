@@ -63,14 +63,14 @@ const PageHeader = ({
       {(badge || actions || rightContent) && (
         <Box className='flex gap-2 items-center'>
           {badge && (
-            <Badge badgeContent={badge.count} color={badge.color || 'primary'}>
+            // <Badge badgeContent={badge.count} color={badge.color || 'primary'}>
               <Chip
                 label={badge.label}
                 color={badge.color || 'primary'}
                 variant='tonal'
                 icon={badge.icon ? <i className={badge.icon} /> : undefined}
               />
-            </Badge>
+            // </Badge>
           )}
           {actions}
           {rightContent}

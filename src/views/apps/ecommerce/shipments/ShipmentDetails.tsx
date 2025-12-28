@@ -408,7 +408,7 @@ const ShipmentDetails = ({
                   }}
                 >
                   <Box className='flex flex-col items-center'>
-                    <Typography variant='body2' className='font-medium'>
+                    <Typography variant='body2' className='font-bold text-black'>
                       {event.status}
                     </Typography>
                     <Typography variant='caption' color='text.secondary' className='text-center'>
@@ -418,8 +418,8 @@ const ShipmentDetails = ({
                       {event.date} at {event.time}
                     </Typography>
                     {event.location && (
-                      <Typography variant='caption' color='text.secondary'>
-                        <i className='ri-map-pin-line' /> {event.location}
+                      <Typography variant='caption' color='text.secondary' className='flex items-center gap-2 mt-2'>
+                        <i className='ri-map-pin-line' style={{ fontSize: 16 }} /> {event.location}
                       </Typography>
                     )}
                   </Box>

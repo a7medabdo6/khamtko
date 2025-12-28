@@ -403,7 +403,7 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
         description={t.description}
         badge={{
           count: products.length,
-          label: `${products.length} ${t.totalProducts}`,
+          label: `${products.length} ${(dictionary.products as any).requestedProducts || 'Requested Products'}`,
           color: 'primary',
           icon: 'ri-shopping-bag-line'
         }}

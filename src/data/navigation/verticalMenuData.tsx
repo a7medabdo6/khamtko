@@ -124,6 +124,11 @@ const verticalMenuData = (dictionary: Awaited<ReturnType<typeof getDictionary>>)
             ]
           },
           {
+            label: dictionary['navigation'].sellerProfile || 'Seller Profile',
+            icon: 'ri-user-star-line',
+            href: '/apps/seller/profile'
+          },
+          {
             label: dictionary['navigation'].shipments,
             icon: 'ri-truck-line',
             href: '/apps/ecommerce/shipments'
