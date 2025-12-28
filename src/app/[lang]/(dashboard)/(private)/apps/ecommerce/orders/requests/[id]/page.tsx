@@ -1,8 +1,10 @@
 // Component Imports
 import OrderRequestDetails from '@/views/apps/ecommerce/orders/requests/OrderRequestDetails'
 
-const OrderRequestDetailsPage = ({ params }: { params: { id: string } }) => {
-  return <OrderRequestDetails requestId={params.id} />
+const OrderRequestDetailsPage = async ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params
+  
+  return <OrderRequestDetails requestId={id} />
 }
 
 export default OrderRequestDetailsPage

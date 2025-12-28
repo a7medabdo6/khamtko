@@ -1,4 +1,3 @@
-import MarketOnePageView from "@/components/market-1/page-view";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
