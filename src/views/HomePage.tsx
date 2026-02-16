@@ -674,7 +674,7 @@ const HomePage = () => {
                     transform: 'scale(1.05)'
                   }
                 }}
-                onClick={() => router.push(`/en/category/${category.name.toLowerCase()}`)}
+                onClick={() => router.push(`/en/products?category=${encodeURIComponent(category.name.toLowerCase())}`)}
               >
                 <Box
                   component="img"

@@ -142,7 +142,7 @@ const Header = () => {
 
             {/* Action Icons */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <IconButton sx={{ color: 'white' }}>
+              <IconButton sx={{ color: 'white' }} onClick={() => router.push('/en/register')}>
                 <i className="ri-user-line" style={{ fontSize: 22 }} />
               </IconButton>
 
