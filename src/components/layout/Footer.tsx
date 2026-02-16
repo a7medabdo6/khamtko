@@ -12,33 +12,41 @@ const Footer = () => {
   return (
     <>
       {/* Newsletter Section */}
-      <Box sx={{ py: 5, bgcolor: '#E0DED2' }}>
+      <Box sx={{ py: { xs: 3, md: 5 }, bgcolor: '#E0DED2', overflow: 'hidden' }}>
         <Container maxWidth="xl">
           <Box
             sx={{
               display: 'flex',
               flexDirection: { xs: 'column', md: 'row' },
               justifyContent: 'space-between',
-              alignItems: { xs: 'flex-start', md: 'center' },
-              gap: 3
+              alignItems: { xs: 'stretch', md: 'center' },
+              gap: { xs: 2, md: 3 }
             }}
           >
-            <Box>
-              <Typography sx={{ fontSize: '1.5rem', fontWeight: 600, color: '#2d2d2d', mb: 1 }}>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ fontSize: { xs: '1.2rem', md: '1.5rem' }, fontWeight: 600, color: '#2d2d2d', mb: 0.5 }}>
                 Join our newsletter
               </Typography>
-              <Typography sx={{ fontSize: '0.9rem', color: '#666' }}>
+              <Typography sx={{ fontSize: { xs: '0.8rem', md: '0.9rem' }, color: '#666' }}>
                 Enter your email to subscribe to our newsletter to get discounts & updates
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', gap: 0, width: { xs: '100%', md: 'auto' } }}>
+            <Box
+              sx={{
+                display: 'flex',
+                width: '100%',
+                maxWidth: { xs: '100%', md: 400 },
+                flexShrink: 0
+              }}
+            >
               <TextField
                 placeholder="Enter your email"
                 variant="outlined"
                 size="small"
                 sx={{
+                  flex: 1,
+                  minWidth: 0,
                   bgcolor: 'white',
-                  minWidth: { xs: '100%', md: 300 },
                   '& .MuiOutlinedInput-root': {
                     borderRadius: '4px 0 0 4px',
                     '& fieldset': { borderColor: '#ccc', borderRight: 'none' },
@@ -53,11 +61,13 @@ const Footer = () => {
                   bgcolor: '#E36F3A',
                   color: 'white',
                   borderRadius: '0 4px 4px 0',
-                  px: 3,
+                  px: { xs: 2, md: 3 },
                   textTransform: 'uppercase',
                   fontWeight: 600,
                   fontSize: '0.8rem',
                   boxShadow: 'none',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                   '&:hover': {
                     bgcolor: '#d15f2a',
                     boxShadow: 'none'
@@ -72,17 +82,17 @@ const Footer = () => {
       </Box>
 
       {/* Main Footer */}
-      <Box sx={{ py: 5, bgcolor: '#E0DED2' }}>
+      <Box sx={{ py: { xs: 4, md: 5 }, bgcolor: '#E0DED2', overflow: 'hidden' }}>
         <Container maxWidth="xl">
           <Box
             sx={{
               display: 'grid',
               gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '2fr 1fr 1fr' },
-              gap: 4
+              gap: { xs: 3, md: 4 }
             }}
           >
             {/* Company Info */}
-            <Box>
+            <Box sx={{ gridColumn: { xs: '1 / -1', sm: '1 / -1', md: 'auto' } }}>
               <Box
                 component="img"
                 src="/images/khamatko-logo.png"
@@ -94,7 +104,7 @@ const Footer = () => {
                 }}
               />
               <Typography sx={{ fontSize: '0.65rem', color: '#777', mb: 0 }}>Part of</Typography>
-              <Box sx={{ mb: 2.5 }}>
+              <Box sx={{ mb: 2 }}>
                 <Typography sx={{ fontSize: '1.1rem', fontWeight: 700, color: '#3d3d3d', lineHeight: 1.1 }}>
                   TGS
                 </Typography>
@@ -104,13 +114,13 @@ const Footer = () => {
               </Box>
 
               <Typography sx={{ fontSize: '0.85rem', color: '#666', mb: 0.5 }}>Customer Supports:</Typography>
-              <Typography sx={{ fontSize: '1.25rem', fontWeight: 600, color: '#E36F3A', mb: 2.5 }}>12345</Typography>
+              <Typography sx={{ fontSize: '1.25rem', fontWeight: 600, color: '#E36F3A', mb: 2 }}>12345</Typography>
 
               <Typography sx={{ fontSize: '0.9rem', color: '#3d3d3d', lineHeight: 1.6 }}>
                 4517 Washington Ave.<br />
                 Manchester, Kentucky 39495
               </Typography>
-              <Typography sx={{ fontSize: '0.9rem', color: '#3d3d3d', mt: 2, mb: 2.5 }}>
+              <Typography sx={{ fontSize: '0.9rem', color: '#3d3d3d', mt: 1.5, mb: 2 }}>
                 support@Khamatko.com
               </Typography>
 
@@ -221,7 +231,7 @@ const Footer = () => {
             {/* Support */}
             <Box>
               <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#2d3748', mb: 2 }}>
-                support
+                Support
               </Typography>
               {['FAQs', 'Contact Us', 'Track Your Order', 'Customer Account', 'Shipping', 'Returns', 'Product Safety'].map((item) => (
                 <Typography

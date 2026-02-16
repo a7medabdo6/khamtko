@@ -748,14 +748,14 @@ const HomePage = () => {
           {/* Products Carousel */}
           <Box sx={{ position: 'relative' }}>
             <Swiper
-              slidesPerView={1}
-              spaceBetween={16}
+              slidesPerView={2}
+              spaceBetween={12}
               navigation={true}
               breakpoints={{
-                480: { slidesPerView: 2 },
-                768: { slidesPerView: 3 },
-                1024: { slidesPerView: 4 },
-                1280: { slidesPerView: 5 }
+                480: { slidesPerView: 2, spaceBetween: 16 },
+                768: { slidesPerView: 3, spaceBetween: 16 },
+                1024: { slidesPerView: 4, spaceBetween: 16 },
+                1280: { slidesPerView: 5, spaceBetween: 16 }
               }}
               modules={[Navigation]}
               className="top-seller-swiper"
@@ -1151,14 +1151,14 @@ const HomePage = () => {
           {/* Products Carousel */}
           <Box sx={{ position: 'relative' }}>
             <Swiper
-              slidesPerView={1}
-              spaceBetween={16}
+              slidesPerView={2}
+              spaceBetween={12}
               navigation={true}
               breakpoints={{
-                480: { slidesPerView: 2 },
-                768: { slidesPerView: 3 },
-                1024: { slidesPerView: 4 },
-                1280: { slidesPerView: 5 }
+                480: { slidesPerView: 2, spaceBetween: 16 },
+                768: { slidesPerView: 3, spaceBetween: 16 },
+                1024: { slidesPerView: 4, spaceBetween: 16 },
+                1280: { slidesPerView: 5, spaceBetween: 16 }
               }}
               modules={[Navigation]}
               className="steel-swiper"
@@ -1574,15 +1574,15 @@ const HomePage = () => {
           <Box sx={{ position: 'relative' }}>
             <Swiper
               modules={[Navigation]}
-              spaceBetween={16}
-              slidesPerView={1.2}
+              spaceBetween={12}
+              slidesPerView={2}
               navigation={true}
               className="canvas-swiper"
               breakpoints={{
-                480: { slidesPerView: 2.2 },
-                768: { slidesPerView: 3.2 },
-                1024: { slidesPerView: 4.2 },
-                1280: { slidesPerView: 5.2 }
+                480: { slidesPerView: 2.2, spaceBetween: 16 },
+                768: { slidesPerView: 3.2, spaceBetween: 16 },
+                1024: { slidesPerView: 4.2, spaceBetween: 16 },
+                1280: { slidesPerView: 5.2, spaceBetween: 16 }
               }}
             >
               {waterproofCanvasProducts.map((product) => (
