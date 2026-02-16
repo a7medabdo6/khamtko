@@ -12,6 +12,11 @@ import Box from '@mui/material/Box'
 import Alert from '@mui/material/Alert'
 import LinearProgress from '@mui/material/LinearProgress'
 import Snackbar from '@mui/material/Snackbar'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import DialogContentText from '@mui/material/DialogContentText'
+import DialogActions from '@mui/material/DialogActions'
 
 // Component Imports
 import PageHeader from '@components/layout/shared/PageHeader'
@@ -25,6 +30,7 @@ const BulkUpload = () => {
   const [snackbarMessage, setSnackbarMessage] = useState('')
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
   const [dragActive, setDragActive] = useState(false)
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -32,13 +38,14 @@ const BulkUpload = () => {
   const handleDownloadTemplate = () => {
     // Create a sample Excel template data
     const templateData = [
-      ['Product Name', 'SKU', 'Category', 'Description', 'Price', 'Quantity', 'Status'],
+      ['Product Name', 'SKU', 'Category', 'Description', 'Price','negotiation','Quantity', 'Status'],
       [
         'Organic Cotton Raw Material',
         'OCRM-WHT-001',
         'Textiles',
         'Premium organic cotton fiber',
         '12.50',
+        'true',
         '500',
         'Active'
       ],
@@ -125,7 +132,7 @@ const BulkUpload = () => {
     }
   }
 
-  const handleUpload = async () => {
+  const handleUploadClick = () => {
     if (!selectedFile) {
       setSnackbarMessage('Please select a file first')
       setSnackbarSeverity('error')
@@ -133,7 +140,15 @@ const BulkUpload = () => {
 
       return
     }
+    setConfirmModalOpen(true)
+  }
 
+  const handleConfirmUpload = () => {
+    setConfirmModalOpen(false)
+    handleUpload()
+  }
+
+  const handleUpload = async () => {
     setUploading(true)
     setUploadProgress(0)
 
@@ -294,7 +309,7 @@ const BulkUpload = () => {
               variant='contained'
               size='large'
               fullWidth
-              onClick={handleUpload}
+              onClick={handleUploadClick}
               disabled={!selectedFile || uploading}
               startIcon={<i className='ri-upload-line' />}
               className='text-white'
@@ -318,6 +333,32 @@ const BulkUpload = () => {
           <li>Upload the completed file using the form above</li>
         </ul>
       </Alert>
+
+      {/* Confirm Upload Modal */}
+      <Dialog
+        open={confirmModalOpen}
+        onClose={() => setConfirmModalOpen(false)}
+        aria-labelledby='confirm-upload-dialog-title'
+        aria-describedby='confirm-upload-dialog-description'
+      >
+        <DialogTitle id='confirm-upload-dialog-title'>
+          Confirm Upload
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id='confirm-upload-dialog-description'>
+           You can upload only once per day. Do you want to proceed with this
+            upload?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirmModalOpen(false)} color='inherit'>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmUpload} style={{color:"white"}} variant='contained' color='primary' autoFocus>
+            Confirm Upload
+          </Button> 
+        </DialogActions>
+      </Dialog>
 
       {/* Success/Error Snackbar */}
       <Snackbar

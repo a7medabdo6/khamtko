@@ -6,8 +6,7 @@ const typography = (fontFamily: string): Theme['typography'] =>
     fontFamily:
       typeof fontFamily === 'undefined' || fontFamily === ''
         ? [
-            'Inter',
-            'sans-serif',
+            'Satoshi',
             '-apple-system',
             'BlinkMacSystemFont',
             '"Segoe UI"',

@@ -1,6 +1,3 @@
-// Next Imports
-import { Inter } from 'next/font/google'
-
 // MUI Imports
 import type { Theme } from '@mui/material/styles'
 
@@ -15,8 +12,6 @@ import spacing from './spacing'
 import shadows from './shadows'
 import customShadows from './customShadows'
 import typography from './typography'
-
-const inter = Inter({ subsets: ['latin'], weight: ['300', '400', '500', '600', '700', '800', '900'] })
 
 const theme = (settings: Settings, mode: SystemMode, direction: Theme['direction']): Theme => {
   return {
@@ -35,7 +30,7 @@ const theme = (settings: Settings, mode: SystemMode, direction: Theme['direction
       }
     },
     shadows: shadows(mode),
-    typography: typography(inter.style.fontFamily),
+    typography: typography("'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"),
     customShadows: customShadows(mode),
     mainColorChannels: {
       light: '46 38 61',

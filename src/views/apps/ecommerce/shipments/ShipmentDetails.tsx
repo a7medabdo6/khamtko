@@ -69,6 +69,8 @@ type ShipmentOrder = {
   returnRequest?: ReturnRequest
 }
 
+type ProductShipmentStatus = 'pending_shipment' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'returned'
+
 type ShipmentProduct = {
   id: string
   name: string
@@ -77,6 +79,7 @@ type ShipmentProduct = {
   quantity: number
   price: string
   total: string
+  shipmentStatus: ProductShipmentStatus
 }
 
 type TimelineEvent = {
@@ -152,7 +155,8 @@ const ShipmentDetails = ({
           image: 'https://images.unsplash.com/photo-1536329583941-14287ec6fc4e?w=500',
           quantity: 100,
           price: '$120.00',
-          total: '$12,000.00'
+          total: '$12,000.00',
+          shipmentStatus: 'out_for_delivery'
         },
         {
           id: '2',
@@ -161,7 +165,8 @@ const ShipmentDetails = ({
           image: 'https://images.unsplash.com/photo-1563207153-f403bf289096?w=500',
           quantity: 500,
           price: '$0.85',
-          total: '$425.00'
+          total: '$425.00',
+          shipmentStatus: 'pending_shipment'
         },
         {
           id: '3',
@@ -170,7 +175,8 @@ const ShipmentDetails = ({
           image: 'https://images.unsplash.com/photo-1585435557343-3b092031a831?w=500',
           quantity: 50,
           price: '$5.10',
-          total: '$255.00'
+          total: '$255.00',
+          shipmentStatus: 'delivered'
         }
       ],
       timeline: [
@@ -196,7 +202,7 @@ const ShipmentDetails = ({
           location: 'Cairo Distribution Center'
         },
         {
-          status: 'In Transit',
+          status: 'Out for delivery',
           description: 'Package is on the way',
           date: '2024-12-18',
           time: '11:45 AM',
@@ -228,17 +234,17 @@ const ShipmentDetails = ({
   const getStatusLabel = (status: ShipmentStatus): string => {
     switch (status) {
       case 'delivered':
-        return t.delivered
+        return (t as any).delivered || 'Delivered'
       case 'in_transit':
-        return t.inTransit
+        return (t as any).outForDelivery || 'In Transit'
       case 'pending':
-        return t.pending
+        return (t as any).pendingShipment || 'Pending'
       case 'on_hold':
-        return t.onHold
+        return (t as any).onHold || 'On Hold'
       case 'cancelled':
-        return t.cancelled
+        return (t as any).cancelled || 'Cancelled'
       case 'returned':
-        return t.returned
+        return (t as any).returnedAll || 'Returned'
       default:
         return status
     }
@@ -255,6 +261,66 @@ const ShipmentDetails = ({
       default:
         return 'info'
     }
+  }
+
+  // Product-level shipment status helpers
+  const getProductStatusColor = (status: ProductShipmentStatus): ThemeColor => {
+    switch (status) {
+      case 'delivered':
+        return 'success'
+      case 'out_for_delivery':
+        return 'primary'
+      case 'pending_shipment':
+        return 'warning'
+      case 'cancelled':
+        return 'error'
+      case 'returned':
+        return 'error'
+      default:
+        return 'info'
+    }
+  }
+
+  const getProductStatusLabel = (status: ProductShipmentStatus): string => {
+    switch (status) {
+      case 'delivered':
+        return (t as any).delivered || 'Delivered'
+      case 'out_for_delivery':
+        return (t as any).outForDelivery || 'Out for Delivery'
+      case 'pending_shipment':
+        return (t as any).pendingShipment || 'Pending Shipment'
+      case 'cancelled':
+        return (t as any).cancelled || 'Cancelled'
+      case 'returned':
+        return (t as any).returned || 'Returned'
+      default:
+        return status
+    }
+  }
+
+  const handleProductStatusChange = (productId: string, newStatus: ProductShipmentStatus) => {
+    if (!shipment) return
+
+    const updatedProducts = shipment.products.map(product =>
+      product.id === productId ? { ...product, shipmentStatus: newStatus } : product
+    )
+
+    const updatedShipment = { ...shipment, products: updatedProducts }
+    setShipment(updatedShipment)
+
+    // Update localStorage
+    const storedOrders = localStorage.getItem('shipmentOrders')
+    if (storedOrders) {
+      const orders: ShipmentOrder[] = JSON.parse(storedOrders)
+      const updatedOrders = orders.map(o => (o.id === shipmentId ? updatedShipment : o))
+      localStorage.setItem('shipmentOrders', JSON.stringify(updatedOrders))
+    }
+
+    setSnackbar({ 
+      open: true, 
+      message: (t as any).productStatusUpdated || 'Product shipment status updated', 
+      severity: 'success' 
+    })
   }
 
   const handleUpdateStatus = () => {
@@ -366,158 +432,16 @@ const ShipmentDetails = ({
               •
             </Typography>
             <Typography variant='body2' color='text.secondary'>
-              {t.estDelivery}: {new Date(shipment.estimatedDelivery).toLocaleDateString()}
+              {(t as any).estDelivery || 'Est. Delivery'}: {new Date(shipment.estimatedDelivery).toLocaleDateString()}
             </Typography>
           </Box>
         }
         showBackButton
         onBackClick={() => router.push('/apps/ecommerce/shipments')}
-        actions={
-          <Button
-            variant='contained'
-            size='small'
-            startIcon={<i className='ri-refresh-line' />}
-            onClick={() => setUpdateStatusDialog(true)}
-            className='text-white'
-          >
-            {t.updateStatus}
-          </Button>
-        }
+     
       />
-
-      {/* Shipment Timeline */}
-      <Card>
-        <CardContent>
-          <Typography variant='h6' className='mbe-4'>
-            {t.shipmentTimeline}
-          </Typography>
-          <Stepper activeStep={shipment.timeline.length - 1} alternativeLabel>
-            {shipment.timeline.map((event, index) => (
-              <Step key={index} completed={true}>
-                <StepLabel
-                  StepIconProps={{
-                    sx: {
-                      color: index === shipment.timeline.length - 1 ? 'primary.main' : 'success.main',
-                      '&.Mui-completed': {
-                        color: 'success.main'
-                      },
-                      '&.Mui-active': {
-                        color: 'primary.main'
-                      }
-                    }
-                  }}
-                >
-                  <Box className='flex flex-col items-center'>
-                    <Typography variant='body2' className='font-bold text-black'>
-                      {event.status}
-                    </Typography>
-                    <Typography variant='caption' color='text.secondary' className='text-center'>
-                      {event.description}
-                    </Typography>
-                    <Typography variant='caption' color='text.secondary' className='mbs-1'>
-                      {event.date} at {event.time}
-                    </Typography>
-                    {event.location && (
-                      <Typography variant='caption' color='text.secondary' className='flex items-center gap-2 mt-2'>
-                        <i className='ri-map-pin-line' style={{ fontSize: 16 }} /> {event.location}
-                      </Typography>
-                    )}
-                  </Box>
-                </StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-        </CardContent>
-      </Card>
-
-      {/* Info Cards */}
-      <Grid container spacing={4}>
-        {/* Customer Information */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant='h6' className='mbe-4'>
-                {t.customerInformation}
-              </Typography>
-              <Box className='flex flex-col gap-3'>
-                <Box>
-                  <Typography variant='caption' color='text.secondary'>
-                    {t.name}
-                  </Typography>
-                  <Typography variant='body2' className='font-medium'>
-                    {shipment.customer}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant='caption' color='text.secondary'>
-                    {t.email}
-                  </Typography>
-                  <Typography variant='body2'>{shipment.customerEmail}</Typography>
-                </Box>
-                <Box>
-                  <Typography variant='caption' color='text.secondary'>
-                    {t.phone}
-                  </Typography>
-                  <Typography variant='body2'>{shipment.customerPhone}</Typography>
-                </Box>
-                <Box>
-                  <Typography variant='caption' color='text.secondary'>
-                    {t.shippingAddress}
-                  </Typography>
-                  <Typography variant='body2'>{shipment.shippingAddress}</Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Shipment Information */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant='h6' className='mbe-4'>
-                {t.shipmentInformation}
-              </Typography>
-              <Box className='flex flex-col gap-3'>
-                <Box>
-                  <Typography variant='caption' color='text.secondary'>
-                    {t.trackingNumber}
-                  </Typography>
-                  <Typography variant='body2' className='font-medium' fontFamily='monospace'>
-                    {shipment.trackingNumber}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant='caption' color='text.secondary'>
-                    {t.carrier}
-                  </Typography>
-                  <Typography variant='body2'>{shipment.carrier}</Typography>
-                </Box>
-                <Box>
-                  <Typography variant='caption' color='text.secondary'>
-                    {t.orderDate}
-                  </Typography>
-                  <Typography variant='body2'>
-                    {new Date(shipment.orderDate).toLocaleDateString()} at{' '}
-                    {new Date(shipment.orderDate).toLocaleTimeString()}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant='caption' color='text.secondary'>
-                    {t.estDelivery}
-                  </Typography>
-                  <Typography variant='body2' className='font-medium'>
-                    {new Date(shipment.estimatedDelivery).toLocaleDateString()}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Order Items */}
-      <Card>
+   {/* Order Items */}
+   <Card>
         <CardContent>
           <Typography variant='h6' className='mbe-4'>
             {t.orderItems}
@@ -531,6 +455,7 @@ const ShipmentDetails = ({
                   <TableCell align='right'>{t.quantity}</TableCell>
                   <TableCell align='right'>{t.price}</TableCell>
                   <TableCell align='right'>{t.total}</TableCell>
+                  <TableCell align='center'>{(t as any).shipmentStatus || 'Shipment Status'}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -564,10 +489,69 @@ const ShipmentDetails = ({
                         {product.total}
                       </Typography>
                     </TableCell>
+                    <TableCell align='center'>
+                      <FormControl size='small' sx={{ minWidth: 160 }}>
+                        <Select
+                          value={product.shipmentStatus}
+                          onChange={(e) => handleProductStatusChange(product.id, e.target.value as ProductShipmentStatus)}
+                          sx={{
+                            fontSize: '0.8rem',
+                            '& .MuiSelect-select': {
+                              py: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1
+                            }
+                          }}
+                          renderValue={(value) => (
+                            <Chip
+                              label={getProductStatusLabel(value as ProductShipmentStatus)}
+                              color={getProductStatusColor(value as ProductShipmentStatus)}
+                              size='small'
+                              sx={{ 
+                                fontWeight: 500,
+                                fontSize: '0.75rem'
+                              }}
+                            />
+                          )}
+                        >
+                          <MenuItem value='pending_shipment'>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Chip size='small' color='warning' label='' sx={{ width: 10, height: 10, p: 0 }} />
+                              {(t as any).pendingShipment || 'Pending Shipment'}
+                            </Box>
+                          </MenuItem>
+                          <MenuItem value='out_for_delivery'>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Chip size='small' color='primary' label='' sx={{ width: 10, height: 10, p: 0 }} />
+                              {(t as any).outForDelivery || 'Out for Delivery'}
+                            </Box>
+                          </MenuItem>
+                          <MenuItem value='delivered'>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Chip size='small' color='success' label='' sx={{ width: 10, height: 10, p: 0 }} />
+                              {(t as any).delivered || 'Delivered'}
+                            </Box>
+                          </MenuItem>
+                          <MenuItem value='cancelled'>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Chip size='small' color='error' label='' sx={{ width: 10, height: 10, p: 0 }} />
+                              {(t as any).cancelled || 'Cancelled'}
+                            </Box>
+                          </MenuItem>
+                          <MenuItem value='returned'>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Chip size='small' color='error' label='' sx={{ width: 10, height: 10, p: 0 }} />
+                              {(t as any).returned || 'Returned'}
+                            </Box>
+                          </MenuItem>
+                        </Select>
+                      </FormControl>
+                    </TableCell>
                   </TableRow>
                 ))}
                 <TableRow>
-                  <TableCell colSpan={4} align='right'>
+                  <TableCell colSpan={5} align='right'>
                     <Typography variant='h6'>{t.totalAmountLabel}</Typography>
                   </TableCell>
                   <TableCell align='right'>
@@ -670,6 +654,97 @@ const ShipmentDetails = ({
           </CardContent>
         </Card>
       )}
+      {/* Shipment Timeline */}
+      <Card>
+        <CardContent>
+          <Typography variant='h6' className='mbe-4'>
+            {t.shipmentTimeline}
+          </Typography>
+          <Stepper activeStep={shipment.timeline.length - 1} alternativeLabel>
+            {shipment.timeline.map((event, index) => (
+              <Step key={index} completed={true}>
+                <StepLabel
+                  StepIconProps={{
+                    sx: {
+                      color: index === shipment.timeline.length - 1 ? 'primary.main' : 'success.main',
+                      '&.Mui-completed': {
+                        color: 'success.main'
+                      },
+                      '&.Mui-active': {
+                        color: 'primary.main'
+                      }
+                    }
+                  }}
+                >
+                  <Box className='flex flex-col items-center'>
+                    <Typography variant='body2' className='font-bold text-black'>
+                      {event.status}
+                    </Typography>
+                    <Typography variant='caption' color='text.secondary' className='text-center'>
+                      {event.description}
+                    </Typography>
+                    <Typography variant='caption' color='text.secondary' className='mbs-1'>
+                      {event.date} at {event.time}
+                    </Typography>
+                    {event.location && (
+                      <Typography variant='caption' color='text.secondary' className='flex items-center gap-2 mt-2'>
+                        <i className='ri-map-pin-line' style={{ fontSize: 16 }} /> {event.location}
+                      </Typography>
+                    )}
+                  </Box>
+                </StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+        </CardContent>
+      </Card>
+
+      {/* Info Cards */}
+      <Grid container spacing={4}>
+        {/* Customer Information */}
+        <Grid item xs={12} md={12}>
+          <Card>
+            <CardContent>
+              <Typography variant='h6' className='mbe-4'>
+                {t.customerInformation}
+              </Typography>
+              <Box className='flex flex-col gap-3'>
+                <Box>
+                  <Typography variant='caption' color='text.secondary'>
+                    {t.name}
+                  </Typography>
+                  <Typography variant='body2' className='font-medium'>
+                    {shipment.customer}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant='caption' color='text.secondary'>
+                    {t.email}
+                  </Typography>
+                  <Typography variant='body2'>{shipment.customerEmail}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant='caption' color='text.secondary'>
+                    {t.phone}
+                  </Typography>
+                  <Typography variant='body2'>{shipment.customerPhone}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant='caption' color='text.secondary'>
+                    {t.shippingAddress}
+                  </Typography>
+                  <Typography variant='body2'>{shipment.shippingAddress}</Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Shipment Information */}
+     
+      </Grid>
+
+   
 
       {/* Update Status Dialog */}
       <Dialog open={updateStatusDialog} onClose={() => setUpdateStatusDialog(false)} maxWidth='sm' fullWidth>
@@ -683,12 +758,12 @@ const ShipmentDetails = ({
                 onChange={e => setSelectedStatus(e.target.value as ShipmentStatus)}
                 label={t.status}
               >
-                <MenuItem value='pending'>{t.pending}</MenuItem>
-                <MenuItem value='in_transit'>{t.inTransit}</MenuItem>
-                <MenuItem value='delivered'>{t.delivered}</MenuItem>
-                <MenuItem value='on_hold'>{t.onHold}</MenuItem>
-                <MenuItem value='cancelled'>{t.cancelled}</MenuItem>
-                <MenuItem value='returned'>{t.returned}</MenuItem>
+                <MenuItem value='pending'>{(t as any).pendingShipment || 'Pending'}</MenuItem>
+                <MenuItem value='in_transit'>{(t as any).outForDelivery || 'In Transit'}</MenuItem>
+                <MenuItem value='delivered'>{(t as any).delivered || 'Delivered'}</MenuItem>
+                <MenuItem value='on_hold'>{(t as any).onHold || 'On Hold'}</MenuItem>
+                <MenuItem value='cancelled'>{(t as any).cancelled || 'Cancelled'}</MenuItem>
+                <MenuItem value='returned'>{(t as any).returnedAll || 'Returned'}</MenuItem>
               </Select>
             </FormControl>
           </Box>

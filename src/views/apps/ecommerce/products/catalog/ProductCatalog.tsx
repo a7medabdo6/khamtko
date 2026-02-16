@@ -23,6 +23,12 @@ import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContentText from '@mui/material/DialogContentText'
+import FormControl from '@mui/material/FormControl'
+import InputLabel from '@mui/material/InputLabel'
+import Select from '@mui/material/Select'
+import MenuItem from '@mui/material/MenuItem'
+import ListSubheader from '@mui/material/ListSubheader'
+import Autocomplete from '@mui/material/Autocomplete'
 
 // Component Imports
 import PageHeader from '@components/layout/shared/PageHeader'
@@ -36,10 +42,56 @@ type CatalogProduct = {
   image: string
   sku: string
   category: string
+  subcategory: string
+  manufacturer: string
   description: string
   basePrice: number
   inStock: boolean
 }
+
+// Category tree structure
+const categoryTree = [
+  {
+    name: 'Textiles',
+    subcategories: ['Cotton', 'Silk', 'Hemp', 'Wool', 'Synthetic']
+  },
+  {
+    name: 'Wood',
+    subcategories: ['Hardwood', 'Softwood', 'Bamboo', 'Plywood', 'MDF']
+  },
+  {
+    name: 'Metal',
+    subcategories: ['Steel', 'Aluminum', 'Copper', 'Iron', 'Brass']
+  },
+  {
+    name: 'Plastics',
+    subcategories: ['Recycled', 'Virgin', 'Biodegradable', 'Industrial']
+  },
+  {
+    name: 'Leather',
+    subcategories: ['Full Grain', 'Top Grain', 'Genuine', 'Bonded', 'Faux']
+  },
+  {
+    name: 'Rubber',
+    subcategories: ['Natural', 'Synthetic', 'Silicone', 'Neoprene']
+  },
+  {
+    name: 'Ceramics',
+    subcategories: ['Clay', 'Porcelain', 'Stoneware', 'Earthenware']
+  }
+]
+
+// Manufacturers list
+const manufacturers = [
+  'RawMaterials Co.',
+  'Global Supplies Inc.',
+  'EcoMaterials Ltd.',
+  'Industrial Resources',
+  'Premium Materials',
+  'Nature\'s Best',
+  'MetalWorks Industries',
+  'TextilePro'
+]
 
 const masterCatalog: CatalogProduct[] = [
   {
@@ -48,6 +100,8 @@ const masterCatalog: CatalogProduct[] = [
     image: 'https://images.unsplash.com/photo-1536329583941-14287ec6fc4e?w=500',
     sku: 'OCRM-WHT-001',
     category: 'Textiles',
+    subcategory: 'Cotton',
+    manufacturer: 'RawMaterials Co.',
     description: 'Premium organic cotton fiber - 100% pure',
     basePrice: 12.5,
     inStock: true
@@ -58,6 +112,8 @@ const masterCatalog: CatalogProduct[] = [
     image: 'https://images.unsplash.com/photo-1563207153-f403bf289096?w=500',
     sku: 'OWL-NAT-002',
     category: 'Wood',
+    subcategory: 'Hardwood',
+    manufacturer: 'Global Supplies Inc.',
     description: 'High-grade oak wood lumber for construction',
     basePrice: 45.0,
     inStock: true
@@ -68,6 +124,8 @@ const masterCatalog: CatalogProduct[] = [
     image: 'https://images.unsplash.com/photo-1585435557343-3b092031a831?w=500',
     sku: 'SSS-304-004',
     category: 'Metal',
+    subcategory: 'Steel',
+    manufacturer: 'MetalWorks Industries',
     description: 'Grade 304 stainless steel sheet metal',
     basePrice: 32.99,
     inStock: true
@@ -78,6 +136,8 @@ const masterCatalog: CatalogProduct[] = [
     image: 'https://images.unsplash.com/photo-1621451537084-482c73073a0f?w=500',
     sku: 'RPP-MIX-010',
     category: 'Plastics',
+    subcategory: 'Recycled',
+    manufacturer: 'EcoMaterials Ltd.',
     description: 'Recycled plastic pellets for manufacturing',
     basePrice: 15.75,
     inStock: true
@@ -88,6 +148,8 @@ const masterCatalog: CatalogProduct[] = [
     image: 'https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=500',
     sku: 'ALI-6061-011',
     category: 'Metal',
+    subcategory: 'Aluminum',
+    manufacturer: 'MetalWorks Industries',
     description: 'Pure aluminum ingots grade 6061',
     basePrice: 38.00,
     inStock: true
@@ -98,6 +160,8 @@ const masterCatalog: CatalogProduct[] = [
     image: 'https://images.unsplash.com/photo-1607968565043-36af90dde238?w=500',
     sku: 'HFR-NAT-012',
     category: 'Textiles',
+    subcategory: 'Hemp',
+    manufacturer: 'Nature\'s Best',
     description: 'Natural hemp fiber for textile production',
     basePrice: 22.50,
     inStock: true
@@ -108,6 +172,8 @@ const masterCatalog: CatalogProduct[] = [
     image: 'https://images.unsplash.com/photo-1624378515195-6bbdb73dff1a?w=500',
     sku: 'CWC-99-007',
     category: 'Metal',
+    subcategory: 'Copper',
+    manufacturer: 'MetalWorks Industries',
     description: '99.9% pure copper wire in coil form',
     basePrice: 42.50,
     inStock: true
@@ -118,6 +184,8 @@ const masterCatalog: CatalogProduct[] = [
     image: 'https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=500',
     sku: 'NRS-BLK-008',
     category: 'Rubber',
+    subcategory: 'Natural',
+    manufacturer: 'Industrial Resources',
     description: 'Natural latex rubber sheets',
     basePrice: 24.99,
     inStock: true
@@ -128,17 +196,20 @@ const masterCatalog: CatalogProduct[] = [
     image: 'https://images.unsplash.com/photo-1591348278863-a4fd8fc0f3c2?w=500',
     sku: 'GLH-BRN-003',
     category: 'Leather',
+    subcategory: 'Full Grain',
+    manufacturer: 'Premium Materials',
     description: 'Full grain genuine leather hide',
     basePrice: 85.0,
     inStock: false
   },
- 
   {
     id: '5',
     name: 'Raw Silk Fabric',
     image: 'https://images.unsplash.com/photo-1566206091558-7f218e696731?w=500',
     sku: 'RSF-WHT-005',
     category: 'Textiles',
+    subcategory: 'Silk',
+    manufacturer: 'TextilePro',
     description: 'Premium quality raw silk fabric material',
     basePrice: 55.75,
     inStock: true
@@ -149,22 +220,24 @@ const masterCatalog: CatalogProduct[] = [
     image: 'https://images.unsplash.com/photo-1601656770048-cd0ff0a7d0b6?w=500',
     sku: 'BRM-NAT-006',
     category: 'Wood',
+    subcategory: 'Bamboo',
+    manufacturer: 'EcoMaterials Ltd.',
     description: 'Sustainable bamboo raw material',
     basePrice: 28.0,
     inStock: true
   },
- 
   {
     id: '9',
     name: 'Ceramic Clay Powder',
     image: 'https://images.unsplash.com/photo-1611511373796-20336ae2e0e4?w=500',
     sku: 'CCP-WHT-009',
     category: 'Ceramics',
+    subcategory: 'Clay',
+    manufacturer: 'RawMaterials Co.',
     description: 'High-purity ceramic clay powder',
     basePrice: 18.50,
     inStock: true
-  },
-  
+  }
 ]
 
 const ProductCatalog = ({ dictionary }: { dictionary: Awaited<ReturnType<typeof getDictionary>> }) => {
@@ -175,6 +248,10 @@ const ProductCatalog = ({ dictionary }: { dictionary: Awaited<ReturnType<typeof 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
+  
+  // Filter States
+  const [filterCategory, setFilterCategory] = useState<string>('all')
+  const [filterManufacturer, setFilterManufacturer] = useState<string>('all')
 
   // Get already assigned products from localStorage
   const getAssignedProducts = () => {
@@ -243,12 +320,34 @@ const ProductCatalog = ({ dictionary }: { dictionary: Awaited<ReturnType<typeof 
     setDialogOpen(false)
   }
 
-  const filteredProducts = masterCatalog.filter(
-    product =>
+  // Clear filters handler
+  const handleClearFilters = () => {
+    setSearchQuery('')
+    setFilterCategory('all')
+    setFilterManufacturer('all')
+  }
+
+  const hasActiveFilters = searchQuery !== '' || filterCategory !== 'all' || filterManufacturer !== 'all'
+
+  const filteredProducts = masterCatalog.filter(product => {
+    // Search filter (name/grade)
+    const matchesSearch = 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+      product.sku.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    // Category filter (matches category or subcategory)
+    const matchesCategory = 
+      filterCategory === 'all' || 
+      product.category === filterCategory ||
+      product.subcategory === filterCategory
+    
+    // Manufacturer filter
+    const matchesManufacturer = 
+      filterManufacturer === 'all' || 
+      product.manufacturer === filterManufacturer
+    
+    return matchesSearch && matchesCategory && matchesManufacturer
+  })
 
   const isProductAssigned = (productId: string) => assignedProductIds.includes(productId)
 
@@ -266,30 +365,22 @@ const ProductCatalog = ({ dictionary }: { dictionary: Awaited<ReturnType<typeof 
         }}
       />
 
-      {/* Search and Actions Bar */}
+      {/* Actions Bar */}
       <div className='flex flex-wrap gap-4 justify-between items-center'>
-        <TextField
-          placeholder={t.searchPlaceholder}
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          sx={{ minWidth: 300 }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position='start'>
-                  <i className='ri-search-line' />
-                </InputAdornment>
-              )
-            }
-          }}
-        />
-
         <div className='flex gap-4 items-center'>
+          {/* Results Count */}
+          <Typography variant='body2' color='text.secondary'>
+            {filteredProducts.length} {(t as any).results || 'results'}
+          </Typography>
+
           {selectedProducts.length > 0 && (
             <Typography variant='body2' color='text.secondary'>
               {t.selected.replace('{count}', selectedProducts.length.toString())}
             </Typography>
           )}
+        </div>
+
+        <div className='flex gap-4 items-center'>
           <Button variant='outlined' onClick={handleSelectAll}>
             {selectedProducts.length === filteredProducts.length ? t.deselectAll : t.selectAll}
           </Button>
@@ -304,6 +395,114 @@ const ProductCatalog = ({ dictionary }: { dictionary: Awaited<ReturnType<typeof 
           </Button>
         </div>
       </div>
+
+      {/* Search and Filters Row */}
+      <Card>
+        <CardContent sx={{ py: 2 }}>
+          <Grid container spacing={2} alignItems='center'>
+            {/* Search by Product Name/Grade */}
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <Autocomplete
+                freeSolo
+                options={masterCatalog.map(product => product.name)}
+                value={searchQuery}
+                onInputChange={(event, newValue) => setSearchQuery(newValue)}
+                renderInput={params => (
+                  <TextField
+                    {...params}
+                    placeholder={(t as any).searchByName || 'Search by product name...'}
+                    size='small'
+                    slotProps={{
+                      input: {
+                        ...params.InputProps,
+                        startAdornment: (
+                          <>
+                            <InputAdornment position='start'>
+                              <i className='ri-search-line' />
+                            </InputAdornment>
+                            {params.InputProps.startAdornment}
+                          </>
+                        )
+                      }
+                    }}
+                  />
+                )}
+              />
+            </Grid>
+
+            {/* Category Filter with Tree */}
+            <Grid size={{ xs: 6, sm: 3, md: 3 }}>
+              <FormControl fullWidth size='small'>
+                <InputLabel>{(t as any).category || 'Category'}</InputLabel>
+                <Select
+                  value={filterCategory}
+                  label={(t as any).category || 'Category'}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                >
+                  <MenuItem value='all'>
+                    <em>{(t as any).allCategories || 'All Categories'}</em>
+                  </MenuItem>
+                  {categoryTree.map(category => [
+                    <ListSubheader key={category.name} sx={{ fontWeight: 'bold', bgcolor: 'action.hover' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <i className='ri-folder-line' />
+                        {category.name}
+                      </Box>
+                    </ListSubheader>,
+                    <MenuItem key={`${category.name}-all`} value={category.name} sx={{ pl: 4 }}>
+                      <em>All {category.name}</em>
+                    </MenuItem>,
+                    ...category.subcategories.map(sub => (
+                      <MenuItem key={sub} value={sub} sx={{ pl: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <i className='ri-file-line' style={{ fontSize: 14 }} />
+                          {sub}
+                        </Box>
+                      </MenuItem>
+                    ))
+                  ])}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Manufacturer Filter */}
+            <Grid size={{ xs: 6, sm: 3, md: 3 }}>
+              <FormControl fullWidth size='small'>
+                <InputLabel>{(t as any).manufacturer || 'Manufacturer'}</InputLabel>
+                <Select
+                  value={filterManufacturer}
+                  label={(t as any).manufacturer || 'Manufacturer'}
+                  onChange={(e) => setFilterManufacturer(e.target.value)}
+                >
+                  <MenuItem value='all'>
+                    <em>{(t as any).allManufacturers || 'All Manufacturers'}</em>
+                  </MenuItem>
+                  {manufacturers.map(mfr => (
+                    <MenuItem key={mfr} value={mfr}>
+                      {mfr}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Clear Filters */}
+            <Grid size={{ xs: 12, sm: 12, md: 2 }}>
+              {hasActiveFilters && (
+                <Button
+                  variant='text'
+                  color='error'
+                  onClick={handleClearFilters}
+                  size='small'
+                  startIcon={<i className='ri-close-circle-line' />}
+                >
+                  {(t as any).clearFilters || 'Clear Filters'}
+                </Button>
+              )}
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
 
       {/* Info Alert */}
       <Alert severity='info' icon={<i className='ri-information-line' />}>
@@ -379,9 +578,7 @@ const ProductCatalog = ({ dictionary }: { dictionary: Awaited<ReturnType<typeof 
                     SKU: {product.sku}
                   </Typography>
 
-                  <Typography variant='h6' color='primary.main'>
-                    ${product.basePrice.toFixed(2)}
-                  </Typography>
+                 
                 </CardContent>
 
                 <CardActions>

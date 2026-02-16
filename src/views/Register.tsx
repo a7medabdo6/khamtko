@@ -12,11 +12,14 @@ import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
 import Divider from '@mui/material/Divider'
+import Checkbox from '@mui/material/Checkbox'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import Box from '@mui/material/Box'
 
 // Third-party Imports
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { valibotResolver } from '@hookform/resolvers/valibot'
-import { object, string, email, pipe, nonEmpty, custom } from 'valibot'
+import { object, string, email, pipe, nonEmpty, custom, optional, boolean } from 'valibot'
 import classnames from 'classnames'
 import type { SubmitHandler } from 'react-hook-form'
 import type { InferInput } from 'valibot'
@@ -39,6 +42,7 @@ import { useSettings } from '@core/hooks/useSettings'
 
 // Util Imports
 import { getLocalizedUrl } from '@/utils/i18n'
+import { SELLER_TYPE, SELLER_TYPE_LABELS } from '@/types/sellerTypes'
 
 type ErrorType = {
   message: string[]
@@ -52,6 +56,7 @@ const schema = object({
   companyName: pipe(string(), nonEmpty('Company name is required')),
   phoneNumber: pipe(string(), nonEmpty('Phone number is required')),
   businessType: pipe(string(), nonEmpty('Please select a business type')),
+  sellerType: pipe(string(), nonEmpty('Please select a seller type')),
 
   // File uploads
   commercialRegisterFile: custom<File>(value => value instanceof File, 'Please upload commercial register'),
@@ -61,7 +66,14 @@ const schema = object({
   vatCertificateFile: custom<File>(value => value instanceof File, 'Please upload VAT certificate'),
   vatCertificateNumber: pipe(string(), nonEmpty('Document number is required')),
   advanceTaxFile: custom<File>(value => value instanceof File, 'Please upload tax certificate'),
-  advanceTaxNumber: pipe(string(), nonEmpty('Document number is required'))
+  advanceTaxNumber: pipe(string(), nonEmpty('Document number is required')),
+
+  // Advance payment (optional; when advancePaymentRequired is true, amount/notes/document required in submit)
+  advancePaymentRequired: optional(boolean()),
+  advancePaymentAmount: optional(string()),
+  advancePaymentNotes: optional(string()),
+  advancePaymentDocument: optional(custom<File | undefined>(v => v === undefined || v instanceof File, 'Must be a file')),
+  advancePaymentDocumentNumber: optional(string())
 })
 
 const businessTypeOptions: SelectOption[] = [
@@ -71,6 +83,12 @@ const businessTypeOptions: SelectOption[] = [
   { value: 'distributor', label: 'Distributor' },
   { value: 'service', label: 'Service Provider' },
   { value: 'other', label: 'Other' }
+]
+
+const sellerTypeOptions: SelectOption[] = [
+  { value: SELLER_TYPE.SUB_COMPANY, label: SELLER_TYPE_LABELS[SELLER_TYPE.SUB_COMPANY] },
+  { value: SELLER_TYPE.SELLER_A, label: SELLER_TYPE_LABELS[SELLER_TYPE.SELLER_A] },
+  { value: SELLER_TYPE.SELLER_B, label: SELLER_TYPE_LABELS[SELLER_TYPE.SELLER_B] }
 ]
 
 const RegisterV2 = ({ mode }: { mode: Mode }) => {
@@ -91,7 +109,7 @@ const RegisterV2 = ({ mode }: { mode: Mode }) => {
   const { lang: locale } = useParams()
   const { settings } = useSettings()
 
-  const { control, handleSubmit } = useForm<FormData>({
+  const { control, handleSubmit, watch } = useForm<FormData>({
     resolver: valibotResolver(schema),
     defaultValues: {
       name: '',
@@ -99,12 +117,19 @@ const RegisterV2 = ({ mode }: { mode: Mode }) => {
       companyName: '',
       phoneNumber: '',
       businessType: '',
+      sellerType: '',
       commercialRegisterNumber: '',
       taxCardNumber: '',
       vatCertificateNumber: '',
-      advanceTaxNumber: ''
+      advanceTaxNumber: '',
+      advancePaymentRequired: false,
+      advancePaymentAmount: '',
+      advancePaymentNotes: '',
+      advancePaymentDocumentNumber: ''
     }
   })
+
+  const advancePaymentRequired = watch('advancePaymentRequired')
 
   const authBackground = useImageVariant(mode, lightImg, darkImg)
 
@@ -118,10 +143,25 @@ const RegisterV2 = ({ mode }: { mode: Mode }) => {
 
   const onSubmit: SubmitHandler<FormData> = async (data: FormData) => {
     try {
+      if (data.advancePaymentRequired) {
+        const hasAmount = !!data.advancePaymentAmount?.trim()
+        const hasNotes = !!data.advancePaymentNotes?.trim()
+        const hasDocument = data.advancePaymentDocument instanceof File
+
+        if (!hasAmount || !hasNotes || !hasDocument) {
+          setErrorState({
+            message: ['When advance payment is required, please provide amount, notes, and upload the document.']
+          })
+          return
+        }
+      }
+
       console.log('Form Data:', data)
+      // data.sellerType is one of: sub_company | seller_a | seller_b
+      // Store it on User (e.g. via registerSeller API) so orders/warehouse/commission can use it.
 
       // Here you would typically send the data to your API
-      // const response = await registerSeller(data)
+      // const response = await registerSeller({ ...data, sellerType: data.sellerType })
       
       setSuccessState(true)
       setErrorState(null)
@@ -243,6 +283,60 @@ const RegisterV2 = ({ mode }: { mode: Mode }) => {
                 options={businessTypeOptions}
                 required
               />
+
+              <CustomSelectField
+                name='sellerType'
+                control={control}
+                label='Seller Type'
+                placeholder='Select a seller type'
+                options={sellerTypeOptions}
+                required
+                helperText='Used for orders, warehouse routing, and commission calculation.'
+              />
+
+              <Controller
+                name='advancePaymentRequired'
+                control={control}
+                render={({ field: { value, onChange, ...field } }) => (
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={!!value}
+                        onChange={e => onChange(e.target.checked)}
+                        {...field}
+                      />
+                    }
+                    label='Advance payment required?'
+                  />
+                )}
+              />
+
+              {advancePaymentRequired && (
+                <Box className='flex flex-col gap-4' sx={{ pl: 4, borderLeft: '2px solid', borderColor: 'divider' }}>
+                  <CustomTextField
+                    name='advancePaymentAmount'
+                    control={control}
+                    label='Amount / Reference'
+                    placeholder='e.g. amount or reference'
+                  />
+                  <CustomTextField
+                    name='advancePaymentNotes'
+                    control={control}
+                    label='Notes'
+                    placeholder='Notes about advance payment'
+                    multiline
+                    rows={2}
+                  />
+                  <CustomFileUpload
+                    name='advancePaymentDocument'
+                    documentNumberName='advancePaymentDocumentNumber'
+                    control={control}
+                    label='Advance payment document'
+                    documentLabel='Document Number'
+                    required={advancePaymentRequired}
+                  />
+                </Box>
+              )}
             </div>
 
             <Divider />

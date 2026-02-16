@@ -33,6 +33,10 @@ import DialogActions from '@mui/material/DialogActions'
 import Grid from '@mui/material/Grid'
 import Alert from '@mui/material/Alert'
 import Snackbar from '@mui/material/Snackbar'
+import Select from '@mui/material/Select'
+import FormControl from '@mui/material/FormControl'
+import InputLabel from '@mui/material/InputLabel'
+import Slider from '@mui/material/Slider'
 
 // Component Imports
 import PageHeader from '@components/layout/shared/PageHeader'
@@ -46,7 +50,7 @@ type Product = {
   image: string
   sku: string
   quantity: number
-  quantityStatus: 'In Stock' | 'Low Stock' | 'Out of Stock'
+  quantityStatus: string
   price: number
   negotiable: boolean
   status: 'Active' | 'Inactive'
@@ -218,6 +222,16 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
   const [snackbarMessage, setSnackbarMessage] = useState('')
   const [editValue, setEditValue] = useState<string>('')
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const [productsCount, setProductsCount] = useState<number>(1)
+  const [notes, setNotes] = useState('')
+  const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false)
+  const [productToDeactivate, setProductToDeactivate] = useState<string | null>(null)
+  
+  // Filter States
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [filterNegotiable, setFilterNegotiable] = useState<string>('all')
+  const [filterPriceRange, setFilterPriceRange] = useState<number[]>([0, 500])
+  const [filterQuantity, setFilterQuantity] = useState<string>('all')
 
   // Handlers
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -240,8 +254,24 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
     )
   }
 
-  const handleDisable = (id: string) => {
-    setProducts(prev => prev.map(product => (product.id === id ? { ...product, status: 'Inactive' } : product)))
+  const handleDeactivateClick = (id: string) => {
+    setProductToDeactivate(id)
+    setDeactivateDialogOpen(true)
+  }
+
+  const handleDeactivateConfirm = () => {
+    if (productToDeactivate) {
+      setProducts(prev => prev.map(product => (product.id === productToDeactivate ? { ...product, status: 'Inactive' } : product)))
+      setSnackbarMessage((t as any).productDeactivated || 'Product deactivated successfully')
+      setSnackbarOpen(true)
+    }
+    setDeactivateDialogOpen(false)
+    setProductToDeactivate(null)
+  }
+
+  const handleDeactivateCancel = () => {
+    setDeactivateDialogOpen(false)
+    setProductToDeactivate(null)
   }
 
   const handleBulkDelete = () => {
@@ -310,6 +340,22 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
     setEditValue('')
   }
 
+  const handleClearFilters = () => {
+    setSearchQuery('')
+    setFilterStatus('all')
+    setFilterNegotiable('all')
+    setFilterPriceRange([0, 500])
+    setFilterQuantity('all')
+  }
+
+  const hasActiveFilters = 
+    searchQuery !== '' || 
+    filterStatus !== 'all' || 
+    filterNegotiable !== 'all' || 
+    filterPriceRange[0] !== 0 || 
+    filterPriceRange[1] !== 500 ||
+    filterQuantity !== 'all'
+
   const handleCustomProductClose = () => {
     setCustomProductDialogOpen(false)
     setCustomProductName('')
@@ -371,24 +417,38 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
     }
   }
 
-  const getQuantityStatusLabel = (status: string) => {
-    switch (status) {
-      case 'In Stock':
-        return t.inStock
-      case 'Low Stock':
-        return t.lowStock
-      case 'Out of Stock':
-        return t.outOfStock
-      default:
-        return status
-    }
-  }
+ 
 
-  const filteredProducts = products.filter(
-    product =>
+  const filteredProducts = products.filter(product => {
+    // Search filter (name and SKU)
+    const matchesSearch = 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+    
+    // Status filter
+    const matchesStatus = filterStatus === 'all' || product.status === filterStatus
+    
+    // Negotiable filter
+    const matchesNegotiable = 
+      filterNegotiable === 'all' || 
+      (filterNegotiable === 'yes' && product.negotiable) ||
+      (filterNegotiable === 'no' && !product.negotiable)
+    
+    // Price range filter
+    const matchesPrice = product.price >= filterPriceRange[0] && product.price <= filterPriceRange[1]
+    
+    // Quantity filter
+    let matchesQuantity = true
+    if (filterQuantity === 'inStock') {
+      matchesQuantity = product.quantity > 50
+    } else if (filterQuantity === 'lowStock') {
+      matchesQuantity = product.quantity > 0 && product.quantity <= 50
+    } else if (filterQuantity === 'outOfStock') {
+      matchesQuantity = product.quantity === 0
+    }
+    
+    return matchesSearch && matchesStatus && matchesNegotiable && matchesPrice && matchesQuantity
+  })
 
   const paginatedProducts = filteredProducts.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
@@ -441,63 +501,13 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
       {mockProducts.length >0 && (
         <>
 
-      {/* Search and Actions Bar */}
+      {/* Actions Bar */}
       <div className='flex flex-wrap gap-4 justify-between items-center'>
         <div className='flex gap-4 items-center'>
-          <Autocomplete
-            freeSolo
-            options={mockProducts.map(product => ({
-              label: product.name,
-              sku: product.sku,
-              id: product.id
-            }))}
-           
-            getOptionLabel={option => (typeof option === 'string' ? option : option.label)}
-            value={searchQuery}
-            onInputChange={(event, newValue) => {
-              setSearchQuery(newValue)
-            }}
-            onChange={(event, newValue) => {
-              if (newValue && typeof newValue !== 'string') {
-                setSearchQuery(newValue.label)
-              }
-            }}
-            renderOption={(props, option) => (
-              <Box component='li' {...props}>
-                <div>
-                  <Typography variant='body2'>{option.label}</Typography>
-                  <Typography variant='caption' color='text.secondary'>
-                    SKU: {option.sku}
-                  </Typography>
-                </div>
-              </Box>
-            )}
-            renderInput={params => (
-              <TextField
-                {...params}
-                placeholder={t.searchProducts}
-
-                slotProps={{
-                  input: {
-                    ...params.InputProps,
-                    startAdornment: (
-                      <>
-                        <InputAdornment position='start'>
-                          <i className='ri-search-line' />
-                        </InputAdornment>
-                        {params.InputProps.startAdornment}
-                      </>
-                    )
-                  }
-                }}
-                sx={{ minWidth: 300, '& .MuiOutlinedInput-root': {
-                  height: 43
-                }, }}
-              />
-            )}
-           
-           
-          />
+          {/* Results Count */}
+          <Typography variant='body2' color='text.secondary'>
+            {filteredProducts.length} {(t as any).results || 'results'}
+          </Typography>
 
           {selected.length > 0 && (
             <>
@@ -553,6 +563,144 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
         </div>
       </div>
 
+      {/* Search and Filters Row */}
+      <Card>
+        <CardContent sx={{ py: 2 }}>
+          <Grid container spacing={2} alignItems='center'>
+            {/* Search */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Autocomplete
+                freeSolo
+                options={mockProducts.map(product => ({
+                  label: product.name,
+                  sku: product.sku,
+                  id: product.id
+                }))}
+                getOptionLabel={option => (typeof option === 'string' ? option : option.label)}
+                value={searchQuery}
+                onInputChange={(event, newValue) => {
+                  setSearchQuery(newValue)
+                }}
+                onChange={(event, newValue) => {
+                  if (newValue && typeof newValue !== 'string') {
+                    setSearchQuery(newValue.label)
+                  }
+                }}
+                renderOption={(props, option) => (
+                  <Box component='li' {...props}>
+                    <div>
+                      <Typography variant='body2'>{option.label}</Typography>
+                      <Typography variant='caption' color='text.secondary'>
+                        SKU: {option.sku}
+                      </Typography>
+                    </div>
+                  </Box>
+                )}
+                renderInput={params => (
+                  <TextField
+                    {...params}
+                    placeholder={t.searchProducts}
+                    size='small'
+                    slotProps={{
+                      input: {
+                        ...params.InputProps,
+                        startAdornment: (
+                          <>
+                            <InputAdornment position='start'>
+                              <i className='ri-search-line' />
+                            </InputAdornment>
+                            {params.InputProps.startAdornment}
+                          </>
+                        )
+                      }
+                    }}
+                  />
+                )}
+              />
+            </Grid>
+
+            {/* Status Filter */}
+            <Grid item xs={6} sm={3} md={2}>
+              <FormControl fullWidth size='small'>
+                <InputLabel>{t.status}</InputLabel>
+                <Select
+                  value={filterStatus}
+                  label={t.status}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                >
+                  <MenuItem value='all'>{(t as any).all || 'All'}</MenuItem>
+                  <MenuItem value='Active'>{t.active}</MenuItem>
+                  <MenuItem value='Inactive'>{t.inactive}</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Negotiable Filter */}
+            <Grid item xs={6} sm={3} md={2}>
+              <FormControl fullWidth size='small'>
+                <InputLabel>{t.negotiable}</InputLabel>
+                <Select
+                  value={filterNegotiable}
+                  label={t.negotiable}
+                  onChange={(e) => setFilterNegotiable(e.target.value)}
+                >
+                  <MenuItem value='all'>{(t as any).all || 'All'}</MenuItem>
+                  <MenuItem value='yes'>{t.yes}</MenuItem>
+                  <MenuItem value='no'>{t.no}</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Quantity Filter */}
+            <Grid item xs={6} sm={3} md={2}>
+              <FormControl fullWidth size='small'>
+                <InputLabel>{t.quantity}</InputLabel>
+                <Select
+                  value={filterQuantity}
+                  label={t.quantity}
+                  onChange={(e) => setFilterQuantity(e.target.value)}
+                >
+                  <MenuItem value='all'>{(t as any).all || 'All'}</MenuItem>
+                  <MenuItem value='inStock'>{t.inStock}</MenuItem>
+                  <MenuItem value='lowStock'>{t.lowStock}</MenuItem>
+                  <MenuItem value='outOfStock'>{t.outOfStock}</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Price Range Filter */}
+            <Grid item xs={6} sm={3} md={2}>
+              <Typography variant='caption' color='text.secondary'>
+                {t.price}: ${filterPriceRange[0]} - ${filterPriceRange[1]}
+              </Typography>
+              <Slider
+                value={filterPriceRange}
+                onChange={(e, newValue) => setFilterPriceRange(newValue as number[])}
+                valueLabelDisplay='auto'
+                min={0}
+                max={500}
+                size='small'
+              />
+            </Grid>
+
+            {/* Clear Filters */}
+            <Grid item xs={12} sm={6} md={1}>
+              {hasActiveFilters && (
+                <Button
+                  variant='text'
+                  color='error'
+                  onClick={handleClearFilters}
+                  size='small'
+                  startIcon={<i className='ri-close-circle-line' />}
+                >
+                  {(t as any).clearFilters || 'Clear'}
+                </Button>
+              )}
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
       {/* Products Table */}
       <Card>
         <CardContent>
@@ -575,7 +723,7 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
                   <TableCell>{t.productName}</TableCell>
                   <TableCell>{t.sku}</TableCell>
                   <TableCell>{t.quantity}</TableCell>
-                  <TableCell>{t.stockStatus}</TableCell>
+                  {/* <TableCell>{t.stockStatus}</TableCell> */}
                   <TableCell>{t.price}</TableCell>
                   <TableCell>{t.negotiable}</TableCell>
                   <TableCell>{t.status}</TableCell>
@@ -690,6 +838,7 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
                           </Box>
                         ) : (
                           <Typography
+                          style={{backgroundColor: product?.quantity > 35 ? '#009BFF' : 'orange',color: 'white',padding: '4px 12px',borderRadius: '4px',textAlign: 'center'}}
                             variant='body2'
                             onDoubleClick={() => handleCellEdit(product.id, 'quantity', product.quantity)}
                             sx={{ cursor: 'text' }}
@@ -699,15 +848,6 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
                         )}
                       </TableCell>
 
-                      {/* Stock Status - Non-editable Badge */}
-                      <TableCell>
-                        <Chip
-                        className='text-white'
-                          label={getQuantityStatusLabel(product.quantityStatus)}
-                          color={getQuantityStatusColor(product.quantityStatus)}
-                          size='small'
-                        />
-                      </TableCell>
 
                       {/* Price - Editable on Double Click */}
                       <TableCell>
@@ -770,7 +910,7 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
                           color='error'
                           size='small'
                           startIcon={<i className='ri-delete-bin-line' />}
-                          onClick={() => handleDisable(product.id)}
+                          onClick={() => handleDeactivateClick(product.id)}
                           disabled={product.status === 'Inactive'}
                         >
                           {t.deactivate}
@@ -823,43 +963,26 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label={t.productName}
-                  placeholder={t.enterProductName}
-                  value={customProductName}
-                  onChange={e => setCustomProductName(e.target.value)}
+                  type='number'
+                  label={t.productsCount}
+                  placeholder={t.enterProductsCount}
+                  value={productsCount}
+                  onChange={e => setProductsCount(parseInt(e.target.value))}
                   required
                 />
               </Grid>
 
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label={t.category}
-                  placeholder={t.enterCategory}
-                  value={customProductCategory}
-                  onChange={e => setCustomProductCategory(e.target.value)}
-                  required
-                />
-              </Grid>
+          
 
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label={t.manufacturer}
-                  placeholder={t.enterManufacturer}
-                  value={customProductManufacture}
-                  onChange={e => setCustomProductManufacture(e.target.value)}
-                  required
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label={t.price}
-                  placeholder={t.enterPrice}
-                  value={customProductPrice}
-                  onChange={e => setCustomProductPrice(e.target.value)}
+                  multiline
+                  rows={4}
+                  label={t.additionalNotes}
+                  placeholder={t.enterAdditionalNotes}
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
                   required
                 />
               </Grid>
@@ -878,6 +1001,41 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
             disabled={!customProductName || !customProductCategory || !customProductManufacture || !customProductPrice}
           >
             {t.submitRequest}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Deactivate Confirmation Dialog */}
+      <Dialog open={deactivateDialogOpen} onClose={handleDeactivateCancel} maxWidth='xs' fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                bgcolor: 'error.lighter',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <i className='ri-error-warning-line' style={{ fontSize: 24, color: '#FF4C51' }} />
+            </Box>
+            <Typography variant='h6'>{(t as any).deactivateProduct || 'Deactivate Product'}</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant='body1' color='text.secondary'>
+            {(t as any).deactivateConfirmMessage || 'Are you sure you want to deactivate this product? The product will no longer be visible to customers.'}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button onClick={handleDeactivateCancel} variant='outlined'>
+            {t.cancel}
+          </Button>
+          <Button onClick={handleDeactivateConfirm} variant='contained' color='error'>
+            {t.deactivate}
           </Button>
         </DialogActions>
       </Dialog>

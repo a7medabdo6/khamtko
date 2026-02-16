@@ -34,7 +34,7 @@ import PageHeader from '@components/layout/shared/PageHeader'
 import type { ThemeColor } from '@core/types'
 import type { getDictionary } from '@/utils/getDictionary'
 
-type ShipmentStatus = 'pending' | 'in_transit' | 'delivered' | 'cancelled' | 'on_hold' | 'returned'
+type ShipmentStatus = 'pending_shipment' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'returned_all' | 'returned_partial'
 
 type Order = {
   id: string
@@ -45,10 +45,12 @@ type Order = {
   orderDate: string
   approvedDate: string
   shipmentStatus: ShipmentStatus
-  trackingNumber: string
-  estimatedDelivery: string
   shippingAddress: string
+  returnedItems?: number // For partial returns
 }
+
+// Check if user is a seller (in real app, this would come from auth context)
+const isSeller = true // TODO: Replace with actual auth check
 
 // Mock data for approved orders
 const mockOrders: Order[] = [
@@ -60,9 +62,7 @@ const mockOrders: Order[] = [
     totalAmount: '$1,250.00',
     orderDate: '2024-12-10',
     approvedDate: '2024-12-11',
-    shipmentStatus: 'in_transit',
-    trackingNumber: 'TRK123456789',
-    estimatedDelivery: '2024-12-20',
+    shipmentStatus: 'out_for_delivery',
     shippingAddress: '123 Industrial Ave, New York, NY 10001'
   },
   {
@@ -74,8 +74,6 @@ const mockOrders: Order[] = [
     orderDate: '2024-12-12',
     approvedDate: '2024-12-13',
     shipmentStatus: 'delivered',
-    trackingNumber: 'TRK987654321',
-    estimatedDelivery: '2024-12-18',
     shippingAddress: '456 Factory Blvd, Los Angeles, CA 90001'
   },
   {
@@ -86,9 +84,7 @@ const mockOrders: Order[] = [
     totalAmount: '$950.00',
     orderDate: '2024-12-14',
     approvedDate: '2024-12-15',
-    shipmentStatus: 'pending',
-    trackingNumber: 'TRK456789123',
-    estimatedDelivery: '2024-12-22',
+    shipmentStatus: 'pending_shipment',
     shippingAddress: '789 Commerce St, Chicago, IL 60601'
   },
   {
@@ -99,9 +95,7 @@ const mockOrders: Order[] = [
     totalAmount: '$1,850.00',
     orderDate: '2024-12-08',
     approvedDate: '2024-12-09',
-    shipmentStatus: 'in_transit',
-    trackingNumber: 'TRK789123456',
-    estimatedDelivery: '2024-12-19',
+    shipmentStatus: 'out_for_delivery',
     shippingAddress: '321 Tech Park, San Francisco, CA 94102'
   },
   {
@@ -113,8 +107,6 @@ const mockOrders: Order[] = [
     orderDate: '2024-12-05',
     approvedDate: '2024-12-06',
     shipmentStatus: 'delivered',
-    trackingNumber: 'TRK654321987',
-    estimatedDelivery: '2024-12-15',
     shippingAddress: '654 Market Square, Boston, MA 02101'
   },
   {
@@ -125,9 +117,7 @@ const mockOrders: Order[] = [
     totalAmount: '$1,450.00',
     orderDate: '2024-12-16',
     approvedDate: '2024-12-17',
-    shipmentStatus: 'on_hold',
-    trackingNumber: 'TRK321987654',
-    estimatedDelivery: '2024-12-25',
+    shipmentStatus: 'pending_shipment',
     shippingAddress: '987 Supply Lane, Houston, TX 77001'
   },
   {
@@ -139,60 +129,51 @@ const mockOrders: Order[] = [
     orderDate: '2024-12-11',
     approvedDate: '2024-12-12',
     shipmentStatus: 'cancelled',
-    trackingNumber: 'TRK147258369',
-    estimatedDelivery: '2024-12-20',
     shippingAddress: '147 Distribution Way, Miami, FL 33101'
   },
   {
-    id: '3',
-    orderNumber: 'ORD-2024-003-RET',
+    id: '8',
+    orderNumber: 'ORD-2024-008-RET',
     customer: 'Ahmed Hassan',
     items: 5,
     totalAmount: '$2,450.00',
     orderDate: '2024-12-15',
     approvedDate: '2024-12-16',
-    shipmentStatus: 'returned',
-    trackingNumber: 'TRK0000000003',
-    estimatedDelivery: '2024-12-22',
+    shipmentStatus: 'returned_all',
     shippingAddress: '123 Tahrir St, Cairo, Egypt, 11511'
   },
   {
-    id: '8',
-    orderNumber: 'ORD-2024-008',
+    id: '9',
+    orderNumber: 'ORD-2024-009',
     customer: 'BuildTech Materials',
     items: 7,
     totalAmount: '$4,150.00',
     orderDate: '2024-12-15',
     approvedDate: '2024-12-16',
-    shipmentStatus: 'in_transit',
-    trackingNumber: 'TRK258369147',
-    estimatedDelivery: '2024-12-23',
+    shipmentStatus: 'out_for_delivery',
     shippingAddress: '258 Builder Rd, Seattle, WA 98101'
-  },
-  {
-    id: '9',
-    orderNumber: 'ORD-2024-009',
-    customer: 'Quality Products LLC',
-    items: 1,
-    totalAmount: '$550.00',
-    orderDate: '2024-12-13',
-    approvedDate: '2024-12-14',
-    shipmentStatus: 'pending',
-    trackingNumber: 'TRK369147258',
-    estimatedDelivery: '2024-12-21',
-    shippingAddress: '369 Quality Ave, Denver, CO 80201'
   },
   {
     id: '10',
     orderNumber: 'ORD-2024-010',
+    customer: 'Quality Products LLC',
+    items: 5,
+    totalAmount: '$550.00',
+    orderDate: '2024-12-13',
+    approvedDate: '2024-12-14',
+    shipmentStatus: 'returned_partial',
+    returnedItems: 2,
+    shippingAddress: '369 Quality Ave, Denver, CO 80201'
+  },
+  {
+    id: '11',
+    orderNumber: 'ORD-2024-011',
     customer: 'Enterprise Solutions',
     items: 4,
     totalAmount: '$2,100.00',
     orderDate: '2024-12-09',
     approvedDate: '2024-12-10',
     shipmentStatus: 'delivered',
-    trackingNumber: 'TRK741852963',
-    estimatedDelivery: '2024-12-17',
     shippingAddress: '741 Enterprise Blvd, Phoenix, AZ 85001'
   }
 ]
@@ -212,8 +193,7 @@ const ShipmentManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<typ
   const filteredOrders = orders.filter(order => {
     const matchesSearch =
       order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.trackingNumber.toLowerCase().includes(searchQuery.toLowerCase())
+      order.customer.toLowerCase().includes(searchQuery.toLowerCase())
 
     const matchesStatus = statusFilter === 'all' || order.shipmentStatus === statusFilter
 
@@ -224,8 +204,8 @@ const ShipmentManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<typ
   const paginatedOrders = filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
   // Stats
-  const inTransitCount = orders.filter(o => o.shipmentStatus === 'in_transit').length
-  const pendingCount = orders.filter(o => o.shipmentStatus === 'pending').length
+  const outForDeliveryCount = orders.filter(o => o.shipmentStatus === 'out_for_delivery').length
+  const pendingCount = orders.filter(o => o.shipmentStatus === 'pending_shipment').length
 
   // Handlers
   const handleChangePage = (event: unknown, newPage: number) => {
@@ -246,38 +226,49 @@ const ShipmentManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<typ
     switch (status) {
       case 'delivered':
         return 'success'
-      case 'in_transit':
+      case 'out_for_delivery':
         return 'primary'
-      case 'pending':
+      case 'pending_shipment':
         return 'warning'
-      case 'on_hold':
-        return 'secondary'
       case 'cancelled':
         return 'error'
-      case 'returned':
+      case 'returned_all':
         return 'error'
+      case 'returned_partial':
+        return 'secondary'
       default:
         return 'info'
     }
   }
 
-  const getStatusLabel = (status: ShipmentStatus): string => {
+  const getStatusLabel = (status: ShipmentStatus, returnedItems?: number, totalItems?: number): string => {
     switch (status) {
       case 'delivered':
-        return t.delivered
-      case 'in_transit':
-        return t.inTransit
-      case 'pending':
-        return t.pending
-      case 'on_hold':
-        return t.onHold
+        return (t as any).delivered || 'Delivered'
+      case 'out_for_delivery':
+        return (t as any).outForDelivery || 'Out for Delivery'
+      case 'pending_shipment':
+        return (t as any).pendingShipment || 'Pending Shipment'
       case 'cancelled':
-        return t.cancelled
-      case 'returned':
-        return t.returned
+        return (t as any).cancelled || 'Cancelled'
+      case 'returned_all':
+        return (t as any).returnedAll || 'Returned (All Items)'
+      case 'returned_partial':
+        return returnedItems 
+          ? `${(t as any).returnedPartial || 'Returned'} (${returnedItems}/${totalItems} items)` 
+          : (t as any).returnedPartial || 'Returned (Partial)'
       default:
         return status
     }
+  }
+
+  // Handler to mark as out for delivery (seller only)
+  const handleMarkOutForDelivery = (orderId: string) => {
+    setOrders(prev => 
+      prev.map(order => 
+        order.id === orderId ? { ...order, shipmentStatus: 'out_for_delivery' as ShipmentStatus } : order
+      )
+    )
   }
 
   return (
@@ -287,8 +278,8 @@ const ShipmentManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<typ
         title={t.title}
         description={t.description}
         badge={{
-          count: inTransitCount,
-          label: `${inTransitCount} ${t.inTransit}`,
+          count: outForDeliveryCount,
+          label: `${outForDeliveryCount} ${(t as any).outForDelivery || 'Out for Delivery'}`,
           color: 'primary',
           icon: 'ri-truck-line'
         }}
@@ -297,7 +288,7 @@ const ShipmentManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<typ
       {/* Info Alert */}
       {pendingCount > 0 && (
         <Alert severity='warning' icon={<i className='ri-time-line' />}>
-          {t.pendingAlert.replace('{count}', pendingCount.toString())}
+          {((t as any).pendingShipmentAlert || 'You have {count} order(s) pending shipment').replace('{count}', pendingCount.toString())}
         </Alert>
       )}
 
@@ -329,13 +320,43 @@ const ShipmentManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<typ
                 label={t.shipmentStatus}
                 onChange={e => setStatusFilter(e.target.value as ShipmentStatus | 'all')}
               >
-                <MenuItem value='all'>{t.allStatus}</MenuItem>
-                <MenuItem value='pending'>{t.pending}</MenuItem>
-                <MenuItem value='in_transit'>{t.inTransit}</MenuItem>
-                <MenuItem value='delivered'>{t.delivered}</MenuItem>
-                <MenuItem value='on_hold'>{t.onHold}</MenuItem>
-                <MenuItem value='cancelled'>{t.cancelled}</MenuItem>
-                <MenuItem value='returned'>{t.returned}</MenuItem>
+                <MenuItem value='all'>{(t as any).allStatus || 'All Status'}</MenuItem>
+                <MenuItem value='pending_shipment'>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip size='small' color='warning' label='' sx={{ width: 8, height: 8, p: 0 }} />
+                    {(t as any).pendingShipment || 'Pending Shipment'}
+                  </Box>
+                </MenuItem>
+                <MenuItem value='out_for_delivery'>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip size='small' color='primary' label='' sx={{ width: 8, height: 8, p: 0 }} />
+                    {(t as any).outForDelivery || 'Out for Delivery'}
+                  </Box>
+                </MenuItem>
+                <MenuItem value='delivered'>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip size='small' color='success' label='' sx={{ width: 8, height: 8, p: 0 }} />
+                    {(t as any).delivered || 'Delivered'}
+                  </Box>
+                </MenuItem>
+                <MenuItem value='cancelled'>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip size='small' color='error' label='' sx={{ width: 8, height: 8, p: 0 }} />
+                    {(t as any).cancelled || 'Cancelled'}
+                  </Box>
+                </MenuItem>
+                <MenuItem value='returned_all'>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip size='small' color='error' label='' sx={{ width: 8, height: 8, p: 0 }} />
+                    {(t as any).returnedAll || 'Returned (All Items)'}
+                  </Box>
+                </MenuItem>
+                <MenuItem value='returned_partial'>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip size='small' color='secondary' label='' sx={{ width: 8, height: 8, p: 0 }} />
+                    {(t as any).returnedPartial || 'Returned (Partial)'}
+                  </Box>
+                </MenuItem>
               </Select>
             </FormControl>
 
@@ -355,8 +376,6 @@ const ShipmentManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<typ
                   <TableCell>{t.productsCount}</TableCell>
                   <TableCell>{t.totalAmount}</TableCell>
                   <TableCell>{t.orderDate}</TableCell>
-                  <TableCell>{t.trackingNumber}</TableCell>
-                  <TableCell>{t.estDelivery}</TableCell>
                   <TableCell>{t.shipmentStatus}</TableCell>
                   <TableCell align='right'>{dictionary.navigation.actions}</TableCell>
                 </TableRow>
@@ -364,7 +383,7 @@ const ShipmentManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<typ
               <TableBody>
                 {paginatedOrders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} align='center'>
+                    <TableCell colSpan={6} align='center'>
                       <Box className='flex flex-col items-center justify-center' sx={{ py: 8 }}>
                       <Box sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }}>
                         <i className='ri-inbox-line' />
@@ -385,6 +404,9 @@ const ShipmentManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<typ
                         <Typography variant='body2' className='font-medium'>
                           {order.orderNumber}
                         </Typography>
+                        <Typography variant='caption' color='text.secondary'>
+                          {order.customer}
+                        </Typography>
                       </TableCell>
                    
                       <TableCell>
@@ -402,16 +424,8 @@ const ShipmentManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<typ
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Typography variant='body2' fontFamily='monospace'>
-                          {order.trackingNumber}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant='body2'>{order.estimatedDelivery}</Typography>
-                      </TableCell>
-                      <TableCell>
                         <Chip
-                          label={getStatusLabel(order.shipmentStatus)}
+                          label={getStatusLabel(order.shipmentStatus, order.returnedItems, order.items)}
                           color={getStatusColor(order.shipmentStatus)}
                           size='small'
                           className='text-white'
@@ -419,6 +433,29 @@ const ShipmentManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<typ
                       </TableCell>
                       <TableCell align='right'>
                         <Box className='flex gap-2 items-end justify-end'>
+                          {/* Out for Delivery button - Seller Only */}
+                          {isSeller && order.shipmentStatus === 'pending_shipment' && (
+                            <Button
+                              variant='contained'
+                              size='small'
+                              onClick={() => handleMarkOutForDelivery(order.id)}
+                              startIcon={<i className='ri-truck-line' style={{ fontSize: '16px' }} />}
+                              sx={{ 
+                                minWidth: 150,
+                                background: '#667eea',
+                                color: 'white',
+                                fontWeight: 600,
+                                fontSize: '0.8rem',
+                                textTransform: 'none',
+                                borderRadius: '8px',
+                                px: 2.5,
+                                py: 2,
+                               
+                              }}
+                            >
+                              {(t as any).markOutForDelivery || 'Out for Delivery'}
+                            </Button>
+                          )}
                           <Button
                             variant='outlined'
                             size='small'

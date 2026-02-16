@@ -21,6 +21,12 @@ import Alert from '@mui/material/Alert'
 import Snackbar from '@mui/material/Snackbar'
 import Badge from '@mui/material/Badge'
 import TablePagination from '@mui/material/TablePagination'
+import FormControl from '@mui/material/FormControl'
+import InputLabel from '@mui/material/InputLabel'
+import Select from '@mui/material/Select'
+import MenuItem from '@mui/material/MenuItem'
+import TextField from '@mui/material/TextField'
+import InputAdornment from '@mui/material/InputAdornment'
 
 // Component Imports
 import PageHeader from '@components/layout/shared/PageHeader'
@@ -30,9 +36,51 @@ type ProductRequest = {
   id: number
   productIds: string[]
   requestDate: string
-  status: 'pending' | 'approved' | 'rejected'
+  status: 'pending' | 'approved' | 'rejected' | 'expired'
   sellerName?: string
   sellerEmail?: string
+}
+
+// Helper function to calculate deadline and time left
+const calculateDeadline = (requestDate: string) => {
+  const orderTime = new Date(requestDate)
+  const orderHour = orderTime.getHours()
+  
+  // Create deadline date
+  const deadline = new Date(orderTime)
+  
+  if (orderHour < 18) {
+    // Orders before 6 PM: deadline is 9 PM same day
+    deadline.setHours(21, 0, 0, 0)
+  } else {
+    // Orders after 6 PM: deadline is 9 PM next day
+    deadline.setDate(deadline.getDate() + 1)
+    deadline.setHours(21, 0, 0, 0)
+  }
+  
+  return deadline
+}
+
+const getTimeLeft = (requestDate: string) => {
+  const deadline = calculateDeadline(requestDate)
+  const now = new Date()
+  const diff = deadline.getTime() - now.getTime()
+  
+  if (diff <= 0) {
+    return { text: 'Expired', isExpired: true, isUrgent: false }
+  }
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  
+  const isUrgent = hours < 2
+  
+  if (hours > 24) {
+    const days = Math.floor(hours / 24)
+    return { text: `${days}d ${hours % 24}h left`, isExpired: false, isUrgent: false }
+  }
+  
+  return { text: `${hours}h ${minutes}m left`, isExpired: false, isUrgent }
 }
 
 // Dummy order requests
@@ -100,6 +148,22 @@ const dummyRequests: ProductRequest[] = [
     status: 'approved',
     sellerName: 'Mega Mart',
     sellerEmail: 'orders@megamart.com'
+  },
+  {
+    id: 222222230,
+    productIds: ['1', '4'],
+    requestDate: new Date('2025-11-15').toISOString(),
+    status: 'expired',
+    sellerName: 'Old Supplies Ltd',
+    sellerEmail: 'contact@oldsupplies.com'
+  },
+  {
+    id: 222222231,
+    productIds: ['2', '5', '6'],
+    requestDate: new Date('2025-11-10').toISOString(),
+    status: 'expired',
+    sellerName: 'Vintage Goods Co',
+    sellerEmail: 'info@vintagegoods.com'
   }
 ]
 
@@ -112,6 +176,10 @@ const OrderRequests = () => {
   const [snackbarMessage, setSnackbarMessage] = useState('')
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
+  
+  // Filter States
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Load requests from localStorage or use dummy data
   useEffect(() => {
@@ -133,38 +201,6 @@ const OrderRequests = () => {
     router.push(`/apps/ecommerce/orders/requests/${request.id}`)
   }
 
-  const handleApprove = (requestId: number) => {
-    const request = requests.find(r => r.id === requestId)
-
-    if (request) {
-      // Add products to assigned products
-      const assignedProducts = localStorage.getItem('assignedProducts')
-      const assigned = assignedProducts ? JSON.parse(assignedProducts) : []
-      const updatedAssigned = [...new Set([...assigned, ...request.productIds])]
-
-      localStorage.setItem('assignedProducts', JSON.stringify(updatedAssigned))
-
-      // Update request status
-      const updatedRequests = requests.map(r => (r.id === requestId ? { ...r, status: 'approved' as const } : r))
-
-      setRequests(updatedRequests)
-      localStorage.setItem('pendingProductRequests', JSON.stringify(updatedRequests))
-
-      setSnackbarMessage('Request approved successfully! Products added to seller inventory.')
-      setSnackbarOpen(true)
-    }
-  }
-
-  const handleReject = (requestId: number) => {
-    const updatedRequests = requests.map(r => (r.id === requestId ? { ...r, status: 'rejected' as const } : r))
-
-    setRequests(updatedRequests)
-    localStorage.setItem('pendingProductRequests', JSON.stringify(updatedRequests))
-
-    setSnackbarMessage('Request rejected.')
-    setSnackbarOpen(true)
-  }
-
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage)
   }
@@ -182,15 +218,39 @@ const OrderRequests = () => {
         return 'success'
       case 'rejected':
         return 'error'
+      case 'expired':
+        return 'secondary'
       default:
         return 'default'
     }
   }
 
+  // Clear filters handler
+  const handleClearFilters = () => {
+    setFilterStatus('all')
+    setSearchQuery('')
+  }
+
+  const hasActiveFilters = filterStatus !== 'all' || searchQuery !== ''
+
+  // Filtered requests
+  const filteredRequests = requests.filter(request => {
+    // Status filter
+    const matchesStatus = filterStatus === 'all' || request.status === filterStatus
+    
+    // Search filter (by ID or seller name)
+    const matchesSearch = 
+      searchQuery === '' ||
+      request.id.toString().includes(searchQuery) ||
+      (request.sellerName?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+    
+    return matchesStatus && matchesSearch
+  })
+
   const pendingCount = requests.filter(r => r.status === 'pending').length
 
   // Pagination
-  const paginatedRequests = requests.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+  const paginatedRequests = filteredRequests.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
   return (
     <div className='flex flex-col gap-6' style={{ backgroundColor: 'white', padding: '24px', minHeight: '100vh' }}>
@@ -214,6 +274,85 @@ const OrderRequests = () => {
         </Alert>
       )}
 
+      {/* Filters Row */}
+      <Card>
+        <CardContent sx={{ py: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Search */}
+            <TextField
+              placeholder='Search by ID or Seller...'
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              size='small'
+              sx={{ minWidth: 250 }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position='start'>
+                      <i className='ri-search-line' />
+                    </InputAdornment>
+                  )
+                }
+              }}
+            />
+
+            {/* Status Filter */}
+            <FormControl size='small' sx={{ minWidth: 180 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={filterStatus}
+                label='Status'
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <MenuItem value='all'>All Status</MenuItem>
+                <MenuItem value='pending'>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip size='small' color='warning' label='' sx={{ width: 8, height: 8, p: 0 }} />
+                    Pending
+                  </Box>
+                </MenuItem>
+                <MenuItem value='approved'>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip size='small' color='success' label='' sx={{ width: 8, height: 8, p: 0 }} />
+                    Approved
+                  </Box>
+                </MenuItem>
+                <MenuItem value='rejected'>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip size='small' color='error' label='' sx={{ width: 8, height: 8, p: 0 }} />
+                    Rejected
+                  </Box>
+                </MenuItem>
+                <MenuItem value='expired'>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip size='small' color='secondary' label='' sx={{ width: 8, height: 8, p: 0 }} />
+                    Expired
+                  </Box>
+                </MenuItem>
+              </Select>
+            </FormControl>
+
+            {/* Results Count */}
+            <Typography variant='body2' color='text.secondary'>
+              {filteredRequests.length} results
+            </Typography>
+
+            {/* Clear Filters */}
+            {hasActiveFilters && (
+              <Button
+                variant='text'
+                color='error'
+                onClick={handleClearFilters}
+                size='small'
+                startIcon={<i className='ri-close-circle-line' />}
+              >
+                Clear Filters
+              </Button>
+            )}
+          </Box>
+        </CardContent>
+      </Card>
+
       {/* Requests Table */}
       <Card>
         <CardContent>
@@ -223,25 +362,37 @@ const OrderRequests = () => {
                 <TableRow>
                   <TableCell>Request ID</TableCell>
                   <TableCell>Request Date</TableCell>
+                  <TableCell>Time Left</TableCell>
                   <TableCell>Products Count</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell align='right'>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {requests.length === 0 ? (
+                {filteredRequests.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} align='center'>
+                    <TableCell colSpan={6} align='center'>
                       <Box className='flex flex-col items-center justify-center' sx={{ py: 8 }}>
                         <Box sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }}>
                           <i className='ri-inbox-line' />
                         </Box>
                         <Typography variant='h6' color='text.secondary'>
-                          No Requests Yet
+                          {hasActiveFilters ? 'No Matching Requests' : 'No Requests Yet'}
                         </Typography>
                         <Typography variant='body2' color='text.secondary'>
-                          Order requests from sellers will appear here
+                          {hasActiveFilters ? 'Try adjusting your filters' : 'Order requests from sellers will appear here'}
                         </Typography>
+                        {hasActiveFilters && (
+                          <Button
+                            variant='text'
+                            color='primary'
+                            onClick={handleClearFilters}
+                            sx={{ mt: 2 }}
+                            startIcon={<i className='ri-refresh-line' />}
+                          >
+                            Clear Filters
+                          </Button>
+                        )}
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -257,8 +408,22 @@ const OrderRequests = () => {
                       <TableCell>
                         <Typography variant='body2'>{new Date(request.requestDate).toLocaleDateString()}</Typography>
                         <Typography variant='caption' color='text.secondary'>
-                          {new Date(request.requestDate).toLocaleTimeString()}
+                          {new Date(request.requestDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </Typography>
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const timeLeft = getTimeLeft(request.requestDate)
+                          return (
+                            <Chip
+                              icon={<i className={timeLeft.isExpired ? 'ri-time-line' : 'ri-timer-line'} style={{ fontSize: 14 }} />}
+                              label={timeLeft.text}
+                              color={timeLeft.isExpired ? 'error' : timeLeft.isUrgent ? 'warning' : 'info'}
+                              size='small'
+                              variant={timeLeft.isUrgent || timeLeft.isExpired ? 'filled' : 'outlined'}
+                            />
+                          )
+                        })()}
                       </TableCell>
                       <TableCell>
                         <Chip label={`${request.productIds.length} Products`} size='small' variant='tonal' />
@@ -271,46 +436,16 @@ const OrderRequests = () => {
                           className='text-white'
                         />
                       </TableCell>
-                      <TableCell align='center'>
-                        <Box className='flex flex-row gap-2 items-end justify-end'>
-                         
-                            <Box className='flex gap-2 items-end justify-end'>
-                                <Button
-                            variant='outlined'
-                            size='small'
-                            className='border-secondary  border-1 text-secondary'
-                            onClick={() => handleViewDetails(request)}
-                            sx={{ minWidth: 100 }}
-                          >
-                            View Details
-                          </Button>
-                          {request.status === 'pending' && (
-                            <> 
-                              <Button
-                                variant='contained'
-                                size='small'
-                                onClick={() => handleApprove(request.id)}
-                                className='text-white'
-                                sx={{ minWidth: 100 }}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                variant='contained'
-                                size='small'
-                                color='error'
-                                onClick={() => handleReject(request.id)}
-                                className='text-white'
-                                sx={{ minWidth: 100 }}
-                              >
-                                Reject
-                              </Button>
-                               </>
-                              )}
-                            </Box>
-                          
-                          
-                        </Box>
+                      <TableCell align='right'>
+                        <Button
+                          variant='contained'
+                          size='small'
+                          onClick={() => handleViewDetails(request)}
+                          startIcon={<i className='ri-eye-line' />}
+                          className='text-white'
+                        >
+                          View Details
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -320,10 +455,10 @@ const OrderRequests = () => {
           </TableContainer>
 
           {/* Pagination */}
-          {requests.length > 0 && (
+          {filteredRequests.length > 0 && (
             <TablePagination
               component='div'
-              count={requests.length}
+              count={filteredRequests.length}
               page={page}
               onPageChange={handleChangePage}
               rowsPerPage={rowsPerPage}

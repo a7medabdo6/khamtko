@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 // MUI Imports
@@ -26,6 +26,7 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import TextField from '@mui/material/TextField'
 import Grid from '@mui/material/Grid'
+import DialogContentText from '@mui/material/DialogContentText'
 
 // Component Imports
 import PageHeader from '@components/layout/shared/PageHeader'
@@ -37,9 +38,51 @@ type ProductRequest = {
   id: number
   productIds: string[]
   requestDate: string
-  status: 'pending' | 'approved' | 'rejected'
+  status: 'pending' | 'approved' | 'rejected' | 'expired'
   sellerName?: string
   sellerEmail?: string
+}
+
+// Helper function to calculate deadline and time left
+const calculateDeadline = (requestDate: string) => {
+  const orderTime = new Date(requestDate)
+  const orderHour = orderTime.getHours()
+  
+  // Create deadline date
+  const deadline = new Date(orderTime)
+  
+  if (orderHour < 18) {
+    // Orders before 6 PM: deadline is 9 PM same day
+    deadline.setHours(21, 0, 0, 0)
+  } else {
+    // Orders after 6 PM: deadline is 9 PM next day
+    deadline.setDate(deadline.getDate() + 1)
+    deadline.setHours(21, 0, 0, 0)
+  }
+  
+  return deadline
+}
+
+const getTimeLeft = (requestDate: string) => {
+  const deadline = calculateDeadline(requestDate)
+  const now = new Date()
+  const diff = deadline.getTime() - now.getTime()
+  
+  if (diff <= 0) {
+    return { text: 'Expired', isExpired: true, isUrgent: false }
+  }
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  
+  const isUrgent = hours < 2
+  
+  if (hours > 24) {
+    const days = Math.floor(hours / 24)
+    return { text: `${days}d ${hours % 24}h left`, isExpired: false, isUrgent: false }
+  }
+  
+  return { text: `${hours}h ${minutes}m left`, isExpired: false, isUrgent }
 }
 
 type Product = {
@@ -105,14 +148,25 @@ const OrderRequestDetails = ({ requestId }: { requestId: string }) => {
   // States
   const [request, setRequest] = useState<ProductRequest | null>(null)
   const [itemStatuses, setItemStatuses] = useState<ProductItemStatus[]>([])
+  const [initialStatuses, setInitialStatuses] = useState<ProductItemStatus[]>([])
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'warning' | 'error'>('success')
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
   const [counterOfferOpen, setCounterOfferOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [counterOfferPrice, setCounterOfferPrice] = useState('')
   const [counterOfferQty, setCounterOfferQty] = useState('')
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false)
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
+  const [timeLeft, setTimeLeft] = useState<{ text: string; isExpired: boolean; isUrgent: boolean } | null>(null)
+
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = useCallback(() => {
+    if (initialStatuses.length === 0) return false
+    return JSON.stringify(itemStatuses) !== JSON.stringify(initialStatuses)
+  }, [itemStatuses, initialStatuses])
 
   // Load request from localStorage
   useEffect(() => {
@@ -126,27 +180,44 @@ const OrderRequestDetails = ({ requestId }: { requestId: string }) => {
         setRequest(foundRequest)
 
         // Initialize item statuses
-        const initialStatuses: ProductItemStatus[] = foundRequest.productIds.map((id: string) => ({
+        const statuses: ProductItemStatus[] = foundRequest.productIds.map((id: string) => ({
           productId: id,
-          status: foundRequest.status
+          status: foundRequest.status === 'expired' ? 'rejected' : foundRequest.status
         }))
 
-        setItemStatuses(initialStatuses)
+        setItemStatuses(statuses)
+        setInitialStatuses(statuses)
+        
+        // Calculate time left
+        setTimeLeft(getTimeLeft(foundRequest.requestDate))
       }
     }
   }, [requestId])
+
+  // Update time left every minute
+  useEffect(() => {
+    if (!request) return
+    
+    const interval = setInterval(() => {
+      setTimeLeft(getTimeLeft(request.requestDate))
+    }, 60000) // Update every minute
+    
+    return () => clearInterval(interval)
+  }, [request])
 
   // Helper functions
   const getProductById = (id: string): Product | undefined => {
     return mockProducts.find(p => p.id === id)
   }
 
-  const getStatusColor = (status: 'pending' | 'approved' | 'rejected'): ThemeColor => {
+  const getStatusColor = (status: 'pending' | 'approved' | 'rejected' | 'expired'): ThemeColor => {
     switch (status) {
       case 'approved':
         return 'success'
       case 'rejected':
         return 'error'
+      case 'expired':
+        return 'secondary'
       case 'pending':
       default:
         return 'info'
@@ -223,7 +294,72 @@ const OrderRequestDetails = ({ requestId }: { requestId: string }) => {
   }
 
   const handleBack = () => {
-    router.push('/apps/ecommerce/orders/requests')
+    if (hasUnsavedChanges()) {
+      setPendingNavigation('/apps/ecommerce/orders/requests')
+      setUnsavedDialogOpen(true)
+    } else {
+      router.push('/apps/ecommerce/orders/requests')
+    }
+  }
+
+  const handleSaveChanges = () => {
+    if (!request) return
+
+    // Update the request in localStorage
+    const storedRequests = localStorage.getItem('pendingProductRequests')
+    
+    if (storedRequests) {
+      const parsed = JSON.parse(storedRequests)
+      
+      // Determine overall status based on item statuses
+      const allApproved = itemStatuses.every(item => item.status === 'approved')
+      const allRejected = itemStatuses.every(item => item.status === 'rejected')
+      const hasApproved = itemStatuses.some(item => item.status === 'approved')
+      
+      let newStatus: 'pending' | 'approved' | 'rejected' = 'pending'
+      if (allApproved) newStatus = 'approved'
+      else if (allRejected) newStatus = 'rejected'
+      else if (hasApproved) newStatus = 'approved' // Partial approval
+
+      const updatedRequests = parsed.map((r: ProductRequest) => 
+        r.id === request.id ? { ...r, status: newStatus } : r
+      )
+      
+      localStorage.setItem('pendingProductRequests', JSON.stringify(updatedRequests))
+      
+      // Update initial statuses to current (no more unsaved changes)
+      setInitialStatuses([...itemStatuses])
+      setRequest({ ...request, status: newStatus })
+      
+      setSnackbarMessage('Changes saved successfully!')
+      setSnackbarSeverity('success')
+      setSnackbarOpen(true)
+    }
+  }
+
+  const handleDiscardChanges = () => {
+    setItemStatuses([...initialStatuses])
+    setUnsavedDialogOpen(false)
+    
+    if (pendingNavigation) {
+      router.push(pendingNavigation)
+    }
+  }
+
+  const handleCancelNavigation = () => {
+    setUnsavedDialogOpen(false)
+    setPendingNavigation(null)
+  }
+
+  const handleSaveAndNavigate = () => {
+    handleSaveChanges()
+    setUnsavedDialogOpen(false)
+    
+    if (pendingNavigation) {
+      setTimeout(() => {
+        router.push(pendingNavigation)
+      }, 500)
+    }
   }
 
   if (!request) {
@@ -244,7 +380,7 @@ const OrderRequestDetails = ({ requestId }: { requestId: string }) => {
       <PageHeader
         title={`Order Number: #${request.id}`}
         description={
-          <Box className='flex gap-2 items-center'>
+          <Box className='flex gap-3 items-center flex-wrap'>
             <Chip
               label={request.status.toUpperCase()}
               color={getStatusColor(request.status)}
@@ -252,13 +388,51 @@ const OrderRequestDetails = ({ requestId }: { requestId: string }) => {
               className='text-white'
             />
             <Typography variant='body2' color='text.secondary'>
-              Date: {new Date(request.requestDate).toLocaleDateString()}
+              Date: {new Date(request.requestDate).toLocaleDateString()} at {new Date(request.requestDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Typography>
+            {timeLeft && (
+              <Chip
+                icon={<i className={timeLeft.isExpired ? 'ri-time-line' : 'ri-timer-line'} />}
+                label={timeLeft.text}
+                color={timeLeft.isExpired ? 'error' : timeLeft.isUrgent ? 'warning' : 'info'}
+                size='small'
+                variant={timeLeft.isUrgent ? 'filled' : 'outlined'}
+              />
+            )}
           </Box>
         }
         showBackButton
         onBackClick={handleBack}
       />
+
+      {/* Save Changes Bar */}
+      {hasUnsavedChanges() && (
+        <Alert 
+          severity='warning' 
+          icon={<i className='ri-error-warning-line' />}
+          action={
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button 
+                color='inherit' 
+                size='small' 
+                onClick={() => setItemStatuses([...initialStatuses])}
+              >
+                Discard
+              </Button>
+              <Button 
+                variant='contained' 
+                size='small' 
+                onClick={handleSaveChanges}
+                className='text-white'
+              >
+                Save Changes
+              </Button>
+            </Box>
+          }
+        >
+          You have unsaved changes. Don't forget to save before leaving.
+        </Alert>
+      )}
 
       {/* Order Details Card */}
       <Card>
@@ -472,6 +646,44 @@ const OrderRequestDetails = ({ requestId }: { requestId: string }) => {
         </DialogActions>
       </Dialog>
 
+      {/* Unsaved Changes Dialog */}
+      <Dialog open={unsavedDialogOpen} onClose={handleCancelNavigation} maxWidth='sm'>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                bgcolor: 'warning.lighter',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <i className='ri-error-warning-line' style={{ fontSize: 24, color: '#FDB528' }} />
+            </Box>
+            <Typography variant='h6'>Unsaved Changes</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            You have unsaved changes. What would you like to do?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button onClick={handleCancelNavigation} variant='outlined'>
+            Cancel
+          </Button>
+          <Button onClick={handleDiscardChanges} color='error'>
+            Discard Changes
+          </Button>
+          <Button onClick={handleSaveAndNavigate} variant='contained' className='text-white'>
+            Save & Continue
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Snackbar */}
       <Snackbar
         open={snackbarOpen}
@@ -479,7 +691,7 @@ const OrderRequestDetails = ({ requestId }: { requestId: string }) => {
         onClose={() => setSnackbarOpen(false)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={() => setSnackbarOpen(false)} severity='success' variant='filled' sx={{ width: '100%' }}>
+        <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} variant='filled' sx={{ width: '100%' }}>
           {snackbarMessage}
         </Alert>
       </Snackbar>
