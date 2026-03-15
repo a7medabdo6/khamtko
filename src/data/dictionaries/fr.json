@@ -17,6 +17,8 @@
     "dashboard": "Tableau de bord",
     "products": "Produits",
     "catalog": "Catalogue de produits",
+    "dailyBulkUpload": "Téléchargement en masse quotidien",
+    "returns": "Retours",
     "shipments": "Gestion des expéditions",
     "sellerProfile": "Profil du vendeur",
     "list": "Liste",

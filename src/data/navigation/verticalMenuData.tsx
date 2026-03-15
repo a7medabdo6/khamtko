@@ -3,37 +3,10 @@ import type { VerticalMenuDataType } from '@/types/menuTypes'
 import type { getDictionary } from '@/utils/getDictionary'
 
 const verticalMenuData = (dictionary: Awaited<ReturnType<typeof getDictionary>>): VerticalMenuDataType[] => [
-  // This is how you will normally render submenu
   {
-    label: dictionary['navigation'].dashboards,
+    label: dictionary['navigation'].dashboard,
     icon: 'ri-home-smile-line',
-    suffix: {
-      label: '5',
-      color: 'error'
-    },
-    children: [
-      // This is how you will normally render menu item
-      {
-        label: dictionary['navigation'].crm,
-        href: '/dashboards/crm'
-      },
-      {
-        label: dictionary['navigation'].analytics,
-        href: '/dashboards/analytics'
-      },
-      {
-        label: dictionary['navigation'].eCommerce,
-        href: '/dashboards/ecommerce'
-      },
-      {
-        label: dictionary['navigation'].academy,
-        href: '/dashboards/academy'
-      },
-      {
-        label: dictionary['navigation'].logistics,
-        href: '/dashboards/logistics'
-      }
-    ]
+    href: '/dashboards/crm'
   },
   {
     label: dictionary['navigation'].frontPages,
@@ -94,6 +67,10 @@ const verticalMenuData = (dictionary: Awaited<ReturnType<typeof getDictionary>>)
                 href: '/apps/ecommerce/products/catalog'
               },
               {
+                label: dictionary['navigation'].dailyBulkUpload,
+                href: '/apps/ecommerce/products/bulk-upload'
+              },
+              {
                 label: 'My Products',
                 href: '/apps/ecommerce/products/list'
               },
@@ -132,6 +109,11 @@ const verticalMenuData = (dictionary: Awaited<ReturnType<typeof getDictionary>>)
             label: dictionary['navigation'].shipments,
             icon: 'ri-truck-line',
             href: '/apps/ecommerce/shipments'
+          },
+          {
+            label: dictionary['navigation'].returns,
+            icon: 'ri-arrow-go-back-line',
+            href: '/apps/ecommerce/returns'
           },
           {
             label: dictionary['navigation'].customers,

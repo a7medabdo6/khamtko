@@ -3,38 +3,10 @@ import type { HorizontalMenuDataType } from '@/types/menuTypes'
 import type { getDictionary } from '@/utils/getDictionary'
 
 const horizontalMenuData = (dictionary: Awaited<ReturnType<typeof getDictionary>>): HorizontalMenuDataType[] => [
-  // This is how you will normally render submenu
   {
-    label: dictionary['navigation'].dashboards,
+    label: dictionary['navigation'].dashboard,
     icon: 'ri-home-smile-line',
-    children: [
-      // This is how you will normally render menu item
-      {
-        label: dictionary['navigation'].crm,
-        icon: 'ri-pie-chart-2-line',
-        href: '/dashboards/crm'
-      },
-      {
-        label: dictionary['navigation'].analytics,
-        icon: 'ri-bar-chart-line',
-        href: '/dashboards/analytics'
-      },
-      {
-        label: dictionary['navigation'].eCommerce,
-        icon: 'ri-shopping-bag-3-line',
-        href: '/dashboards/ecommerce'
-      },
-      {
-        label: dictionary['navigation'].academy,
-        icon: 'ri-graduation-cap-line',
-        href: '/dashboards/academy'
-      },
-      {
-        label: dictionary['navigation'].logistics,
-        icon: 'ri-car-line',
-        href: '/dashboards/logistics'
-      }
-    ]
+    href: '/dashboards/crm'
   },
   {
     label: dictionary['navigation'].apps,
@@ -55,6 +27,10 @@ const horizontalMenuData = (dictionary: Awaited<ReturnType<typeof getDictionary>
               {
                 label: 'Browse Catalog',
                 href: '/apps/ecommerce/products/catalog'
+              },
+              {
+                label: dictionary['navigation'].dailyBulkUpload,
+                href: '/apps/ecommerce/products/bulk-upload'
               },
               {
                 label: 'My Products',
@@ -89,6 +65,11 @@ const horizontalMenuData = (dictionary: Awaited<ReturnType<typeof getDictionary>
             label: dictionary['navigation'].shipments,
             icon: 'ri-truck-line',
             href: '/apps/ecommerce/shipments'
+          },
+          {
+            label: dictionary['navigation'].returns,
+            icon: 'ri-arrow-go-back-line',
+            href: '/apps/ecommerce/returns'
           },
           {
             label: dictionary['navigation'].sellerProfile || 'Seller Profile',

@@ -512,10 +512,13 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
           {selected.length > 0 && (
             <>
               <Button
-                variant='outlined'
-                color='secondary'
+                          className='text-white'
+
+                variant='contained'
+                color='primary'
                 onClick={e => setAnchorEl(e.currentTarget)}
                 startIcon={<i className='ri-more-line' />}
+                endIcon={<i className='ri-arrow-down-s-line' />}
               >
                 {dictionary.navigation.actions} ({selected.length})
               </Button>
@@ -740,77 +743,26 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
                         <Checkbox checked={isItemSelected} onChange={() => handleSelectOne(product.id)} />
                       </TableCell>
 
-                      {/* Product Name - Editable on Double Click */}
+                      {/* Product Name - Read Only */}
                       <TableCell>
-                        {editingCell?.id === product.id && editingCell?.field === 'name' ? (
-                          <Box className='flex items-center gap-2'>
-                            <TextField
-                              size='small'
-                              value={editValue}
-                              onChange={e => setEditValue(e.target.value)}
-                              autoFocus
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') handleSaveEdit()
-                                if (e.key === 'Escape') handleCancelEdit()
-                              }}
-                            />
-                            <IconButton size='small' color='primary' onClick={handleSaveEdit}>
-                              <i className='ri-check-line' />
-                            </IconButton>
-                            <IconButton size='small' onClick={handleCancelEdit}>
-                              <i className='ri-close-line' />
-                            </IconButton>
-                          </Box>
-                        ) : (
-                          <Box
-                            className='flex items-center gap-3'
-                            onDoubleClick={() => handleCellEdit(product.id, 'name', product.name)}
-                            sx={{ cursor: 'text' }}
-                          >
-                            <Avatar
-                              src={product.image}
-                              alt={product.name}
-                              variant='rounded'
-                              sx={{ width: 40, height: 40 }}
-                            />
-                            <Typography variant='body2' className='font-medium'>
-                              {product.name}
-                            </Typography>
-                          </Box>
-                        )}
+                        <Box className='flex items-center gap-3'>
+                          <Avatar
+                            src={product.image}
+                            alt={product.name}
+                            variant='rounded'
+                            sx={{ width: 40, height: 40 }}
+                          />
+                          <Typography variant='body2' className='font-medium'>
+                            {product.name}
+                          </Typography>
+                        </Box>
                       </TableCell>
 
-                      {/* SKU - Editable on Double Click */}
+                      {/* SKU - Read Only */}
                       <TableCell>
-                        {editingCell?.id === product.id && editingCell?.field === 'sku' ? (
-                          <Box className='flex items-center gap-2'>
-                            <TextField
-                              size='small'
-                              value={editValue}
-                              onChange={e => setEditValue(e.target.value)}
-                              autoFocus
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') handleSaveEdit()
-                                if (e.key === 'Escape') handleCancelEdit()
-                              }}
-                            />
-                            <IconButton size='small' color='primary' onClick={handleSaveEdit}>
-                              <i className='ri-check-line' />
-                            </IconButton>
-                            <IconButton size='small' onClick={handleCancelEdit}>
-                              <i className='ri-close-line' />
-                            </IconButton>
-                          </Box>
-                        ) : (
-                          <Typography
-                            variant='body2'
-                            color='text.secondary'
-                            onDoubleClick={() => handleCellEdit(product.id, 'sku', product.sku)}
-                            sx={{ cursor: 'text' }}
-                          >
-                            {product.sku}
-                          </Typography>
-                        )}
+                        <Typography variant='body2' color='text.secondary'>
+                          {product.sku}
+                        </Typography>
                       </TableCell>
 
                       {/* Quantity Number - Editable on Double Click */}
@@ -849,43 +801,11 @@ const ProductListManagement = ({ dictionary }: { dictionary: Awaited<ReturnType<
                       </TableCell>
 
 
-                      {/* Price - Editable on Double Click */}
+                      {/* Price - Read Only */}
                       <TableCell>
-                        {editingCell?.id === product.id && editingCell?.field === 'price' ? (
-                          <Box className='flex items-center gap-2'>
-                            <TextField
-                              size='small'
-                              type='number'
-                              value={editValue}
-                              onChange={e => setEditValue(e.target.value)}
-                              autoFocus
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') handleSaveEdit()
-                                if (e.key === 'Escape') handleCancelEdit()
-                              }}
-                              slotProps={{
-                                input: {
-                                  startAdornment: <InputAdornment position='start'>$</InputAdornment>
-                                }
-                              }}
-                              sx={{ width: 100 }}
-                            />
-                            <IconButton size='small' color='primary' onClick={handleSaveEdit}>
-                              <i className='ri-check-line' />
-                            </IconButton>
-                            <IconButton size='small' onClick={handleCancelEdit}>
-                              <i className='ri-close-line' />
-                            </IconButton>
-                          </Box>
-                        ) : (
-                          <Typography
-                            variant='body2'
-                            onDoubleClick={() => handleCellEdit(product.id, 'price', product.price)}
-                            sx={{ cursor: 'text' }}
-                          >
-                            ${product.price.toFixed(2)}
-                          </Typography>
-                        )}
+                        <Typography variant='body2'>
+                          ${product.price.toFixed(2)}
+                        </Typography>
                       </TableCell>
 
                       {/* Negotiable Toggle */}

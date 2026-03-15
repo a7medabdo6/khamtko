@@ -17,34 +17,6 @@ const data: SearchData[] = [
     section: 'Dashboards'
   },
   {
-    id: '2',
-    name: 'Analytics Dashboard',
-    url: '/dashboards/analytics',
-    icon: 'ri-bar-chart-line',
-    section: 'Dashboards'
-  },
-  {
-    id: '3',
-    name: 'eCommerce Dashboard',
-    url: '/dashboards/ecommerce',
-    icon: 'ri-shopping-cart-2-line',
-    section: 'Dashboards'
-  },
-  {
-    id: '4',
-    name: 'Academy Dashboard',
-    url: '/dashboards/academy',
-    icon: 'ri-book-open-line',
-    section: 'Dashboards'
-  },
-  {
-    id: '5',
-    name: 'Logistics Dashboard',
-    url: '/dashboards/logistics',
-    icon: 'ri-truck-line',
-    section: 'Dashboards'
-  },
-  {
     id: '6',
     name: 'Landing Front',
     url: '/front-pages/landing-page',

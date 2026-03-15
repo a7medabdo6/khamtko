@@ -123,9 +123,7 @@ const DashboardECommerce = async () => {
       <Grid size={{ xs: 12, lg: 8 }} className='order-last lg:order-[unset]'>
         <Table invoiceData={data.slice(0, 8)} />
       </Grid>
-      <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-        <MeetingSchedule />
-      </Grid>
+     
     </Grid>
   )
 }

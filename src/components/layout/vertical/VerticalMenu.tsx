@@ -81,20 +81,13 @@ const VerticalMenu = ({ dictionary, scrollMenu }: Props) => {
         renderExpandedMenuItemIcon={{ icon: <i className='ri-circle-line' /> }}
         menuSectionStyles={menuSectionStyles(verticalNavOptions, theme)}
       >
-        <SubMenu
-          label={dictionary['navigation'].dashboards}
-          icon={<i className='ri-home-smile-line' />}
-          suffix={<Chip label='5' size='small' color='error' />}
-        >
-          <MenuItem href={`/${locale}/dashboards/crm`}>{dictionary['navigation'].crm}</MenuItem>
-          <MenuItem href={`/${locale}/dashboards/analytics`}>{dictionary['navigation'].analytics}</MenuItem>
-          <MenuItem href={`/${locale}/dashboards/ecommerce`}>{dictionary['navigation'].eCommerce}</MenuItem>
-          <MenuItem href={`/${locale}/dashboards/academy`}>{dictionary['navigation'].academy}</MenuItem>
-          <MenuItem href={`/${locale}/dashboards/logistics`}>{dictionary['navigation'].logistics}</MenuItem>
-        </SubMenu>
+        <MenuItem href={`/${locale}/dashboards/crm`} icon={<i className='ri-home-smile-line' />}>
+          {dictionary['navigation'].dashboard}
+        </MenuItem>
         <SubMenu label={dictionary['navigation'].products} icon={<i className='ri-store-3-line' />}>
           <MenuItem href={`/${locale}/apps/ecommerce/products/list`}>{dictionary['navigation'].list}</MenuItem>
           <MenuItem href={`/${locale}/apps/ecommerce/products/catalog`}>{dictionary['navigation'].catalog}</MenuItem>
+          <MenuItem href={`/${locale}/apps/ecommerce/products/bulk-upload`}>{dictionary['navigation'].dailyBulkUpload}</MenuItem>
       </SubMenu>
     {/* <MenuItem
       icon={<i className='ri-store-3-line' />}
@@ -119,6 +112,14 @@ const VerticalMenu = ({ dictionary, scrollMenu }: Props) => {
       activeUrl='/apps/ecommerce/shipments'
     >
       {dictionary['navigation'].shipments}
+    </MenuItem>
+    <MenuItem
+      icon={<i className='ri-arrow-go-back-line' />}
+      href={`/${locale}/apps/ecommerce/returns`}
+      exactMatch={false}
+      activeUrl='/apps/ecommerce/returns'
+    >
+      {dictionary['navigation'].returns}
     </MenuItem>
         {/* <SubMenu label={dictionary['navigation'].frontPages} icon={<i className='ri-file-copy-line' />}>
           <MenuItem href='/front-pages/landing-page' target='_blank'>

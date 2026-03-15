@@ -94,23 +94,9 @@ const HorizontalMenu = ({ dictionary }: { dictionary: Awaited<ReturnType<typeof 
           menuSectionStyles: verticalMenuSectionStyles(verticalNavOptions, theme)
         }}
       >
-        <SubMenu label={dictionary['navigation'].dashboards} icon={<i className='ri-home-smile-line' />}>
-          <MenuItem href={`/${locale}/dashboards/crm`} icon={<i className='ri-pie-chart-2-line' />}>
-            {dictionary['navigation'].crm}
-          </MenuItem>
-          <MenuItem href={`/${locale}/dashboards/analytics`} icon={<i className='ri-bar-chart-line' />}>
-            {dictionary['navigation'].analytics}
-          </MenuItem>
-          <MenuItem href={`/${locale}/dashboards/ecommerce`} icon={<i className='ri-shopping-bag-3-line' />}>
-            {dictionary['navigation'].eCommerce}
-          </MenuItem>
-          <MenuItem href={`/${locale}/dashboards/academy`} icon={<i className='ri-graduation-cap-line' />}>
-            {dictionary['navigation'].academy}
-          </MenuItem>
-          <MenuItem href={`/${locale}/dashboards/logistics`} icon={<i className='ri-car-line' />}>
-            {dictionary['navigation'].logistics}
-          </MenuItem>
-        </SubMenu>
+        <MenuItem href={`/${locale}/dashboards/crm`} icon={<i className='ri-home-smile-line' />}>
+          {dictionary['navigation'].dashboard}
+        </MenuItem>
 
         <SubMenu label={dictionary['navigation'].apps} icon={<i className='ri-mail-open-line' />}>
           <SubMenu label={dictionary['navigation'].eCommerce} icon={<i className='ri-shopping-bag-3-line' />}>

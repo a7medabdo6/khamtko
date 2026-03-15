@@ -25,19 +25,9 @@ const defaultSuggestions: DefaultSuggestionsType[] = [
     sectionLabel: 'Popular Searches',
     items: [
       {
-        label: 'Analytics',
-        href: '/dashboards/analytics',
-        icon: 'ri-bar-chart-line'
-      },
-      {
         label: 'CRM',
         href: '/dashboards/crm',
         icon: 'ri-pie-chart-2-line'
-      },
-      {
-        label: 'eCommerce',
-        href: '/dashboards/ecommerce',
-        icon: 'ri-shopping-bag-3-line'
       },
       {
         label: 'User List',
