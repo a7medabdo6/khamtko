@@ -116,6 +116,11 @@ const verticalMenuData = (dictionary: Awaited<ReturnType<typeof getDictionary>>)
             href: '/apps/ecommerce/returns'
           },
           {
+            label: dictionary['navigation'].transactions,
+            icon: 'ri-exchange-funds-line',
+            href: '/apps/ecommerce/transactions'
+          },
+          {
             label: dictionary['navigation'].customers,
             children: [
               {

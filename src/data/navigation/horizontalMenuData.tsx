@@ -72,6 +72,11 @@ const horizontalMenuData = (dictionary: Awaited<ReturnType<typeof getDictionary>
             href: '/apps/ecommerce/returns'
           },
           {
+            label: dictionary['navigation'].transactions,
+            icon: 'ri-exchange-funds-line',
+            href: '/apps/ecommerce/transactions'
+          },
+          {
             label: dictionary['navigation'].sellerProfile || 'Seller Profile',
             icon: 'ri-user-star-line',
             href: '/apps/seller/profile'

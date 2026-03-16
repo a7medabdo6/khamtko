@@ -121,6 +121,14 @@ const VerticalMenu = ({ dictionary, scrollMenu }: Props) => {
     >
       {dictionary['navigation'].returns}
     </MenuItem>
+    <MenuItem
+      icon={<i className='ri-exchange-funds-line' />}
+      href={`/${locale}/apps/ecommerce/transactions`}
+      exactMatch={false}
+      activeUrl='/apps/ecommerce/transactions'
+    >
+      {dictionary['navigation'].transactions}
+    </MenuItem>
         {/* <SubMenu label={dictionary['navigation'].frontPages} icon={<i className='ri-file-copy-line' />}>
           <MenuItem href='/front-pages/landing-page' target='_blank'>
             {dictionary['navigation'].landing}
